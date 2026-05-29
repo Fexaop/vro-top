@@ -23,7 +23,7 @@ function ExamCard({ item }: { item: ExamSlot }) {
           <Text variant="bodySmall" style={{ color: colors.onSurfaceVariant }}>
             {new Date(item.date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
           </Text>
-          <Text variant="bodySmall" style={{ color: colors.onSurfaceVariant }}>{item.time}</Text>
+          <Text variant="bodySmall" style={{ color: colors.onSurfaceVariant }}>{item.examTime}</Text>
         </View>
         <View style={[styles.row, { marginTop: 4 }]}>
           <Text variant="bodySmall" style={{ color: colors.onSurfaceVariant }}>Venue: {item.venue}</Text>

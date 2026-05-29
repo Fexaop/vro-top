@@ -9,18 +9,20 @@ export interface CourseGrade {
   courseTitle: string;
   credits: number;
   grade: string;
-  gradePoint: number;
+  gradePoint: number | null;
+  totalMarks: number | null;
   components: GradeComponent[];
 }
 
 export interface SemesterResult {
   semesterCode: string;
   semesterName: string;
-  sgpa: number;
-  cgpa: number;
+  sgpa: number | null;
+  cgpa: number | null;
   courses: CourseGrade[];
   creditsEarned: number;
   creditsRegistered: number;
+  totalCredits: number;
 }
 
 export interface GradeDistribution {

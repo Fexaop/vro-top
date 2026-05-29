@@ -52,22 +52,20 @@ export default function HostelScreen() {
               <Divider style={{ marginVertical: 8 }} />
               <View style={styles.row}>
                 <Text variant="bodySmall" style={{ color: colors.onSurfaceVariant }}>Block</Text>
-                <Text variant="bodyMedium">{hostel.block}</Text>
+                <Text variant="bodyMedium">{hostel.blockName}</Text>
               </View>
               <View style={styles.row}>
                 <Text variant="bodySmall" style={{ color: colors.onSurfaceVariant }}>Room</Text>
                 <Text variant="bodyMedium">{hostel.roomNumber}</Text>
               </View>
               <View style={styles.row}>
-                <Text variant="bodySmall" style={{ color: colors.onSurfaceVariant }}>Floor</Text>
-                <Text variant="bodyMedium">{hostel.floor}</Text>
+                <Text variant="bodySmall" style={{ color: colors.onSurfaceVariant }}>Gender</Text>
+                <Text variant="bodyMedium">{hostel.gender}</Text>
               </View>
-              {hostel.messName && (
-                <View style={styles.row}>
-                  <Text variant="bodySmall" style={{ color: colors.onSurfaceVariant }}>Mess</Text>
-                  <Text variant="bodyMedium">{hostel.messName}</Text>
-                </View>
-              )}
+              <View style={styles.row}>
+                <Text variant="bodySmall" style={{ color: colors.onSurfaceVariant }}>Mess</Text>
+                <Text variant="bodyMedium">{hostel.messType}</Text>
+              </View>
             </Card.Content>
           </Card>
         ) : null}
@@ -81,14 +79,14 @@ export default function HostelScreen() {
         {leavesLoading ? (
           <ActivityIndicator />
         ) : leaves?.length ? (
-          leaves.map((l, i) => (
-            <Card key={i} mode="outlined" style={[styles.card, { marginBottom: 8 }]}>
+          leaves.map((l) => (
+            <Card key={l.id} mode="outlined" style={[styles.card, { marginBottom: 8 }]}>
               <Card.Content>
                 <View style={styles.row}>
                   <Text variant="bodyMedium">{l.reason}</Text>
                   <Chip compact style={{
-                    backgroundColor: l.status === 'approved' ? colors.tertiary + '20' :
-                      l.status === 'rejected' ? colors.error + '20' : colors.surfaceVariant,
+                    backgroundColor: l.status === 'Approved' ? colors.tertiary + '20' :
+                      l.status === 'Rejected' ? colors.error + '20' : colors.surfaceVariant,
                   }}>
                     {l.status}
                   </Chip>
