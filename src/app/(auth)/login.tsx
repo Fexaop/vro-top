@@ -149,6 +149,15 @@ export default function LoginScreen() {
               {loading ? 'Signing in…' : 'Sign In'}
             </Button>
 
+            <Button
+              mode="text"
+              onPress={() => router.push('/(auth)/settings')}
+              style={styles.settingsBtn}
+              icon="cog"
+            >
+              Settings
+            </Button>
+
             <Text
               variant="bodySmall"
               style={[styles.note, { color: theme.colors.onSurfaceVariant }]}
@@ -174,5 +183,6 @@ const styles = StyleSheet.create({
   input: { marginBottom: 4 },
   button: { marginTop: 16 },
   buttonContent: { paddingVertical: 6 },
-  note: { textAlign: 'center', marginTop: 16, lineHeight: 18 },
+  settingsBtn: { marginTop: 4 },
+  note: { textAlign: 'center', marginTop: 8, lineHeight: 18 },
 });

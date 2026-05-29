@@ -1,7 +1,9 @@
+import { useState } from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
-import { Divider, List, Switch, Text, TextInput, useTheme } from 'react-native-paper';
+import { Button, Divider, HelperText, List, Snackbar, Switch, Text, TextInput, useTheme } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSettingsStore, SEMESTER_LIST } from '@/store/settings-store';
+import { useAuthStore } from '@/store/auth-store';
 import type { ThemePref, ScraperMode } from '@/store/settings-store';
 
 export default function SettingsScreen() {
@@ -19,15 +21,75 @@ export default function SettingsScreen() {
   const setNotificationsEnabled = useSettingsStore((s) => s.setNotificationsEnabled);
   const setSelectedSemester = useSettingsStore((s) => s.setSelectedSemester);
 
+  const vtopCreds = useAuthStore((s) => s.vtopCreds);
+  const setVtopCreds = useAuthStore((s) => s.setVtopCreds);
+  const clearVtopSession = useAuthStore((s) => s.clearVtopSession);
+
+  const [newUsername, setNewUsername] = useState(vtopCreds?.username ?? '');
+  const [newPassword, setNewPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [credsSaved, setCredsSaved] = useState(false);
+  const [credsError, setCredsError] = useState('');
+
   const themeOptions: ThemePref[] = ['system', 'light', 'dark'];
   const scraperOptions: ScraperMode[] = ['ondevice', 'cfworker'];
 
   const currentSem = SEMESTER_LIST.find((s) => s.code === selectedSemester);
 
+  async function handleSaveCreds() {
+    setCredsError('');
+    if (!newUsername.trim()) { setCredsError('Registration number cannot be empty.'); return; }
+    if (!newPassword.trim()) { setCredsError('Password cannot be empty.'); return; }
+    await setVtopCreds({ username: newUsername.trim(), password: newPassword });
+    clearVtopSession();
+    setNewPassword('');
+    setCredsSaved(true);
+  }
+
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: theme.colors.background }]}>
       <ScrollView>
         <Text variant="headlineMedium" style={styles.title}>Settings</Text>
+
+        <List.Section>
+          <List.Subheader>Account</List.Subheader>
+          <View style={styles.credForm}>
+            <TextInput
+              label="Registration Number"
+              value={newUsername}
+              onChangeText={setNewUsername}
+              mode="outlined"
+              autoCapitalize="characters"
+              autoCorrect={false}
+              left={<TextInput.Icon icon="account" />}
+              style={styles.input}
+            />
+            <TextInput
+              label="New Password"
+              value={newPassword}
+              onChangeText={setNewPassword}
+              mode="outlined"
+              secureTextEntry={!showPassword}
+              left={<TextInput.Icon icon="lock" />}
+              right={
+                <TextInput.Icon
+                  icon={showPassword ? 'eye-off' : 'eye'}
+                  onPress={() => setShowPassword((v) => !v)}
+                />
+              }
+              style={styles.input}
+            />
+            {credsError ? <HelperText type="error" visible>{credsError}</HelperText> : null}
+            <Button mode="contained-tonal" onPress={handleSaveCreds} icon="content-save">
+              Save Credentials
+            </Button>
+            <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginTop: 4 }}>
+              Saving will sign you out of the current session and re-login automatically.
+            </Text>
+          </View>
+        </List.Section>
+
+        <Divider />
 
         <List.Section>
           <List.Subheader>Semester</List.Subheader>
@@ -121,6 +183,14 @@ export default function SettingsScreen() {
           ) : null}
         </List.Section>
       </ScrollView>
+
+      <Snackbar
+        visible={credsSaved}
+        onDismiss={() => setCredsSaved(false)}
+        duration={3000}
+      >
+        Credentials saved. Re-login will happen automatically.
+      </Snackbar>
     </SafeAreaView>
   );
 }
@@ -128,7 +198,8 @@ export default function SettingsScreen() {
 const styles = StyleSheet.create({
   safe: { flex: 1 },
   title: { padding: 16 },
-  input: { marginHorizontal: 16, marginBottom: 8 },
+  credForm: { paddingHorizontal: 16, paddingBottom: 8, gap: 4 },
+  input: { marginBottom: 4 },
   semCard: {
     marginHorizontal: 16,
     marginBottom: 8,
