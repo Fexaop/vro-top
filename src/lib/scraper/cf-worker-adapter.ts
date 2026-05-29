@@ -36,32 +36,25 @@ export class CfWorkerAdapter implements ScraperAdapter {
   }
 
   async vtopLogin(creds: VtopCredentials): Promise<VtopSession> {
-    // Each /vtop/prelogin call is a fresh Worker invocation (separate subrequest budget).
-    // The retry loop lives here in the client so the worker stays under CF's 50-subrequest limit.
+    // Worker handles reCAPTCHA retry loop internally (max 10 = 40 subrequests, under CF limit).
+    // Client retries only on wrong captcha answer (422).
     for (let attempt = 0; attempt < MAX_CAPTCHA_RETRIES; attempt++) {
-      type PreloginResult =
-        | { recaptcha: true }
-        | { cookies: string; csrfToken: string; captchaBase64: string }
-        | { error: string };
+      type PreloginResult = { cookies: string[]; csrf: string; captchaBase64: string } | { error: string };
 
       const prelogin = await this.post<PreloginResult>('/vtop/prelogin', {});
-
       if ('error' in prelogin) throw new Error(prelogin.error);
 
-      // Worker hit reCAPTCHA this round — retry (next invocation gets a fresh VTOP session)
-      if ('recaptcha' in prelogin) continue;
-
-      // Solve the image captcha on-device
+      // Solve the image captcha on-device — never leaves the browser
       const { solved } = await solveCaptcha(prelogin.captchaBase64);
 
       const res = await this.postRaw('/vtop/login', {
         credentials: creds,
         captchaSolution: solved,
-        cookies: prelogin.cookies,
-        csrfToken: prelogin.csrfToken,
+        cookies: prelogin.cookies, // pass as array — worker joins them
+        csrf: prelogin.csrf,
       });
 
-      if (res.status === 422) continue; // wrong captcha answer — retry
+      if (res.status === 422) continue; // wrong captcha — get a fresh one
       if (!res.ok) {
         const data = await res.json() as { error?: string };
         throw new Error(data.error ?? `Worker error ${res.status}`);
