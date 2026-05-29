@@ -8,7 +8,8 @@ function extractCookies(headers: Headers): string {
 }
 
 export async function handleVitolLogin(c: Context): Promise<Response> {
-  const { username, password } = await c.req.json<{ username: string; password: string }>();
+  const body = await c.req.json<{ credentials: { username: string; password: string } } | { username: string; password: string }>();
+  const { username, password } = 'credentials' in body ? body.credentials : body;
   let lastError = 'All Vitol hosts failed';
 
   for (const host of VITOL_HOSTS) {
@@ -38,7 +39,8 @@ export async function handleVitolLogin(c: Context): Promise<Response> {
 }
 
 export async function handleVitolAssignments(c: Context): Promise<Response> {
-  const { sessionKey, host } = await c.req.json<{ sessionKey: string; host: string; userId: string }>();
+  const body = await c.req.json<{ credentials: { sessionKey: string; host: string; userId: string } } | { sessionKey: string; host: string; userId: string }>();
+  const { sessionKey, host } = 'credentials' in body ? body.credentials : body;
   const now = new Date();
   const months = [
     { year: now.getFullYear(), month: now.getMonth() + 1 },

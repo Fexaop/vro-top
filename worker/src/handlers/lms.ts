@@ -4,7 +4,8 @@ const LMS_BASE = 'https://lms.vit.ac.in';
 const UA = 'Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 Chrome/124.0.0.0 Mobile Safari/537.36';
 
 export async function handleLmsLogin(c: Context): Promise<Response> {
-  const { username, password } = await c.req.json<{ username: string; password: string }>();
+  const body = await c.req.json<{ credentials: { username: string; password: string } } | { username: string; password: string }>();
+  const { username, password } = 'credentials' in body ? body.credentials : body;
   const res = await fetch(`${LMS_BASE}/login/token.php`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'User-Agent': UA },
@@ -16,7 +17,8 @@ export async function handleLmsLogin(c: Context): Promise<Response> {
 }
 
 export async function handleLmsAssignments(c: Context): Promise<Response> {
-  const { token, userId } = await c.req.json<{ token: string; userId: number }>();
+  const body = await c.req.json<{ credentials: { token: string; userId: number } } | { token: string; userId: number }>();
+  const { token, userId } = 'credentials' in body ? body.credentials : body;
 
   const coursesRes = await fetch(
     `${LMS_BASE}/webservice/rest/server.php?wsfunction=core_enrol_get_users_courses&userid=${userId}&wstoken=${token}&moodlewsrestformat=json`,
