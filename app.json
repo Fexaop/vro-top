@@ -36,7 +36,15 @@
         }
       ],
       "expo-secure-store",
-      "expo-background-task"
+      "expo-background-task",
+      "expo-task-manager",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/icon.png",
+          "color": "#1A5CA8"
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,
