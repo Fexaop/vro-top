@@ -53,7 +53,7 @@ type PersistedSettings = Omit<
 
 const DEFAULTS: PersistedSettings = {
   theme: 'system',
-  scraperMode: 'ondevice',
+  scraperMode: 'cfworker',
   workerUrl: '',
   showCgpa: true,
   decimalPlaces: 2,

@@ -10,11 +10,7 @@ export function useScraper(): ScraperAdapter {
   const workerUrl = useSettingsStore((s) => s.workerUrl);
 
   return useMemo(() => {
-    if (scraperMode === 'cfworker' && workerUrl) {
-      return new CfWorkerAdapter(workerUrl);
-    }
-    // Web cannot make direct cross-origin requests to VIT servers — CF Worker required
-    if (Platform.OS === 'web' && workerUrl) {
+    if (workerUrl && (scraperMode === 'cfworker' || Platform.OS === 'web')) {
       return new CfWorkerAdapter(workerUrl);
     }
     return new OnDeviceAdapter();
