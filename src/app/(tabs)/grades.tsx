@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { FlatList, RefreshControl, StyleSheet, View } from 'react-native';
-import { ActivityIndicator, Banner, Button, Card, Chip, Text, useTheme } from 'react-native-paper';
+import { ActivityIndicator, Banner, Button, Card, Chip, IconButton, Text, useTheme } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useAuthStore } from '@/store/auth-store';
@@ -19,9 +19,10 @@ function gradeColor(grade: string, colors: Record<string, string>): string {
 
 function GradeCard({ item }: { item: CourseGrade }) {
   const { colors } = useTheme();
-  const gc = gradeColor(item.grade, colors as unknown as Record<string, string>);
+  const gc = gradeColor(item.grade ?? '', colors as unknown as Record<string, string>);
   const totalScored = item.components.reduce((s, c) => s + (c.markScored ?? 0), 0);
   const totalMax = item.components.reduce((s, c) => s + c.maxMark, 0);
+  const gradeLabel = item.grade ? item.grade : 'In Progress';
 
   return (
     <Card style={styles.card} mode="outlined">
@@ -36,23 +37,23 @@ function GradeCard({ item }: { item: CourseGrade }) {
               style={{ backgroundColor: gc + '20' }}
               textStyle={{ color: gc, fontWeight: 'bold' }}
             >
-              {item.grade || 'In Progress'}
+              {gradeLabel}
             </Chip>
             <Text variant="labelSmall" style={{ color: colors.onSurfaceVariant }}>
-              {item.credits} cr · GP {item.gradePoint?.toFixed(1) ?? 'N/A'}
+              {`${item.credits} cr · GP ${item.gradePoint?.toFixed(1) ?? 'N/A'}`}
             </Text>
           </View>
         </View>
-        {totalMax > 0 && (
+        {totalMax > 0 ? (
           <View style={[styles.row, { marginTop: 6 }]}>
             <Text variant="labelSmall" style={{ color: colors.onSurfaceVariant }}>
-              Marks: {totalScored.toFixed(1)} / {totalMax}
+              {`Marks: ${totalScored.toFixed(1)} / ${totalMax}`}
             </Text>
             <Text variant="labelSmall" style={{ color: colors.onSurfaceVariant }}>
-              {item.components.length} components
+              {`${item.components.length} components`}
             </Text>
           </View>
-        )}
+        ) : null}
       </Card.Content>
     </Card>
   );
@@ -83,43 +84,52 @@ export default function GradesScreen() {
   });
 
   const data = cachedGrades;
-  const cgpa = data.length
+  const cgpa = data.length > 0
     ? (data.reduce((sum, g) => sum + (g.gradePoint ?? 0) * g.credits, 0) /
         Math.max(data.reduce((sum, g) => sum + (g.gradePoint != null ? g.credits : 0), 0), 1)).toFixed(2)
     : null;
 
-  const semCode = session?.semesterCode;
+  const semCode = session?.semesterCode ?? null;
+  const lastUpdatedStr = lastFetched !== null ? new Date(lastFetched).toLocaleTimeString() : null;
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
-      {isError && (
-        <Banner visible actions={[{ label: 'Retry', onPress: () => refetch() }]}>
+      {isError ? (
+        <Banner visible actions={[{ label: 'Retry', onPress: () => void refetch() }]}>
           {error instanceof Error ? error.message : String(error)}
         </Banner>
-      )}
+      ) : null}
       <View style={styles.header}>
-        <View>
+        <View style={{ flex: 1 }}>
           <Text variant="headlineMedium">Grades</Text>
-          {lastFetched !== null && (
+          {lastUpdatedStr !== null ? (
             <Text variant="labelSmall" style={{ color: colors.onSurfaceVariant }}>
-              Updated {new Date(lastFetched).toLocaleTimeString()}
+              {`Updated ${lastUpdatedStr}`}
             </Text>
-          )}
+          ) : null}
         </View>
         <View style={styles.row}>
-          {cgpa && <Chip icon="school">{`CGPA ${cgpa}`}</Chip>}
+          {cgpa != null ? (
+            <Chip icon="school">{`CGPA ${cgpa}`}</Chip>
+          ) : null}
+          <IconButton
+            icon="refresh"
+            size={20}
+            onPress={() => void refetch()}
+            iconColor={colors.primary}
+          />
           <Button mode="text" onPress={() => router.push('/grades/history')}>History</Button>
         </View>
       </View>
-      {semCode && (
+      {semCode != null ? (
         <Button
           mode="outlined"
           style={{ marginHorizontal: 16, marginBottom: 8 }}
           onPress={() => router.push(`/grades/${encodeURIComponent(semCode)}`)}
         >
-          View Component-wise Marks
+          View Marks Breakdown
         </Button>
-      )}
+      ) : null}
       {isLoading && !hasCache ? (
         <View style={styles.center}><ActivityIndicator /></View>
       ) : (
@@ -129,7 +139,7 @@ export default function GradesScreen() {
           renderItem={({ item }) => <GradeCard item={item} />}
           contentContainerStyle={styles.list}
           refreshControl={
-            <RefreshControl refreshing={isRefetching} onRefresh={() => refetch()} colors={[colors.primary]} />
+            <RefreshControl refreshing={isRefetching} onRefresh={() => void refetch()} colors={[colors.primary]} />
           }
           ListEmptyComponent={
             <Text style={[styles.empty, { color: colors.onSurfaceVariant }]}>No grades data found.</Text>
@@ -143,7 +153,7 @@ export default function GradesScreen() {
 const styles = StyleSheet.create({
   safe: { flex: 1 },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16 },
-  row: { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  row: { flexDirection: 'row', alignItems: 'center', gap: 4 },
   list: { padding: 16, gap: 12, paddingBottom: 32 },
   card: { marginBottom: 0 },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },

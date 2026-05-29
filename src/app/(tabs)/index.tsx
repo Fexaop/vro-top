@@ -65,7 +65,7 @@ export default function DashboardScreen() {
             <Card.Content style={styles.statContent}>
               {attLoading ? <ActivityIndicator /> : (
                 <>
-                  <Text variant="displaySmall" style={{ color: colors.onPrimaryContainer }}>{overallAtt ?? '--'}%</Text>
+                  <Text variant="displaySmall" style={{ color: colors.onPrimaryContainer }}>{`${overallAtt ?? '--'}%`}</Text>
                   <Text variant="labelMedium" style={{ color: colors.onPrimaryContainer }}>Attendance</Text>
                 </>
               )}
@@ -83,7 +83,7 @@ export default function DashboardScreen() {
           </Card>
         </View>
 
-        {lowAtt.length > 0 && (
+        {lowAtt.length > 0 ? (
           <Card mode="outlined" style={[styles.card, { borderColor: colors.error }]} onPress={() => router.push('/(tabs)/attendance')}>
             <Card.Content>
               <Text variant="titleSmall" style={{ color: colors.error }}>Low Attendance Warning</Text>
@@ -92,9 +92,9 @@ export default function DashboardScreen() {
               </Text>
             </Card.Content>
           </Card>
-        )}
+        ) : null}
 
-        {nextExam && (
+        {nextExam != null ? (
           <Card mode="outlined" style={styles.card} onPress={() => router.push('/(tabs)/exam')}>
             <Card.Content>
               <Text variant="titleSmall">Next Exam</Text>
@@ -102,13 +102,15 @@ export default function DashboardScreen() {
               <Text variant="bodyMedium">{nextExam.courseTitle}</Text>
               <View style={[styles.row, { marginTop: 4 }]}>
                 <Text variant="bodySmall" style={{ color: colors.onSurfaceVariant }}>
-                  {new Date(nextExam.date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short' })} · {nextExam.session}
+                  {`${nextExam.date} · ${nextExam.session}`}
                 </Text>
-                {nextExam.seatNumber && <Chip compact>Seat {nextExam.seatNumber}</Chip>}
+                {nextExam.seatNumber ? (
+                  <Chip compact>{`Seat ${nextExam.seatNumber}`}</Chip>
+                ) : null}
               </View>
             </Card.Content>
           </Card>
-        )}
+        ) : null}
 
         <Text variant="titleMedium" style={{ marginTop: 16, marginBottom: 8 }}>Quick Access</Text>
         <View style={styles.grid}>

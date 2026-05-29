@@ -6,6 +6,7 @@ import {
   Card,
   Chip,
   Divider,
+  IconButton,
   ProgressBar,
   Text,
   useTheme,
@@ -35,6 +36,9 @@ function ComponentRow({ comp, colors }: { comp: GradeComponent; colors: Record<s
   const barColor = pct != null
     ? componentBarColor(pct, colors as { tertiary: string; primary: string; error: string })
     : colors.outlineVariant;
+  const scoreLabel = comp.markScored != null
+    ? `${comp.markScored} / ${comp.maxMark}`
+    : `— / ${comp.maxMark}`;
 
   return (
     <View style={styles.compRow}>
@@ -43,24 +47,26 @@ function ComponentRow({ comp, colors }: { comp: GradeComponent; colors: Record<s
           {comp.componentName}
         </Text>
         <Text variant="labelSmall" style={{ fontWeight: 'bold', color: colors.onSurface }}>
-          {comp.markScored != null ? `${comp.markScored} / ${comp.maxMark}` : `— / ${comp.maxMark}`}
+          {scoreLabel}
         </Text>
       </View>
-      {pct != null && (
+      {pct != null ? (
         <ProgressBar
           progress={pct}
           color={barColor}
           style={styles.progressBar}
         />
-      )}
+      ) : null}
     </View>
   );
 }
 
 function MarksCard({ item }: { item: CourseGrade }) {
   const { colors } = useTheme();
-  const gc = gradeColor(item.grade, colors as unknown as Record<string, string>);
+  const gc = gradeColor(item.grade ?? '', colors as unknown as Record<string, string>);
   const hasComponents = item.components.length > 0;
+  const courseInfo = `${item.courseCode} · ${item.credits} cr`;
+  const gpLabel = item.gradePoint != null ? `GP ${item.gradePoint.toFixed(1)}` : null;
 
   return (
     <Card style={styles.card} mode="outlined">
@@ -69,7 +75,7 @@ function MarksCard({ item }: { item: CourseGrade }) {
           <View style={{ flex: 1 }}>
             <Text variant="titleSmall" numberOfLines={2}>{item.courseTitle}</Text>
             <Text variant="bodySmall" style={{ color: colors.onSurfaceVariant }}>
-              {item.courseCode} · {item.credits} cr
+              {courseInfo}
             </Text>
           </View>
           <View style={{ alignItems: 'flex-end', gap: 4 }}>
@@ -81,15 +87,15 @@ function MarksCard({ item }: { item: CourseGrade }) {
                 {item.grade}
               </Chip>
             ) : null}
-            {item.gradePoint != null && (
+            {gpLabel !== null ? (
               <Text variant="labelSmall" style={{ color: colors.onSurfaceVariant }}>
-                GP {item.gradePoint.toFixed(1)}
+                {gpLabel}
               </Text>
-            )}
+            ) : null}
           </View>
         </View>
 
-        {hasComponents && (
+        {hasComponents ? (
           <>
             <Divider style={{ marginVertical: 10 }} />
             {item.components.map((comp) => (
@@ -99,18 +105,18 @@ function MarksCard({ item }: { item: CourseGrade }) {
                 colors={colors as unknown as Record<string, string>}
               />
             ))}
-            {item.totalMarks != null && (
+            {item.totalMarks != null ? (
               <View style={[styles.row, { marginTop: 6 }]}>
                 <Text variant="labelSmall" style={{ color: colors.onSurfaceVariant }}>
                   Total
                 </Text>
                 <Text variant="labelMedium" style={{ fontWeight: 'bold', color: colors.onSurface }}>
-                  {item.totalMarks}
+                  {`${item.totalMarks}`}
                 </Text>
               </View>
-            )}
+            ) : null}
           </>
-        )}
+        ) : null}
       </Card.Content>
     </Card>
   );
@@ -140,24 +146,31 @@ export default function MarksScreen() {
   });
 
   const data = cachedGrades;
+  const lastUpdatedStr = lastFetched !== null ? new Date(lastFetched).toLocaleTimeString() : null;
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
-      {isError && (
+      {isError ? (
         <Banner visible actions={[{ label: 'Retry', onPress: () => void refetch() }]}>
           {error instanceof Error ? error.message : String(error)}
         </Banner>
-      )}
+      ) : null}
 
       <View style={styles.header}>
-        <View>
+        <View style={{ flex: 1 }}>
           <Text variant="headlineMedium">Marks</Text>
-          {lastFetched !== null && (
+          {lastUpdatedStr !== null ? (
             <Text variant="labelSmall" style={{ color: colors.onSurfaceVariant }}>
-              Updated {new Date(lastFetched).toLocaleTimeString()}
+              {`Last updated ${lastUpdatedStr}`}
             </Text>
-          )}
+          ) : null}
         </View>
+        <IconButton
+          icon="refresh"
+          size={20}
+          onPress={() => void refetch()}
+          iconColor={colors.primary}
+        />
       </View>
 
       {isLoading && !hasCache ? (

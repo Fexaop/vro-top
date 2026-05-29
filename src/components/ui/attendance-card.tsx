@@ -35,7 +35,7 @@ export function AttendanceCard({ course, onPress }: Props) {
             variant="headlineSmall"
             style={{ color: barColor, fontVariant: ['tabular-nums'] }}
           >
-            {pct}%
+            {`${pct}%`}
           </Text>
         </View>
 
@@ -55,7 +55,7 @@ export function AttendanceCard({ course, onPress }: Props) {
               style={{ color: theme.colors.onSurfaceVariant }}
               numberOfLines={1}
             >
-              {course.faculty.split(' ')[0]}
+              {course.faculty.split(' ')[0] ?? ''}
             </Text>
           ) : null}
         </View>

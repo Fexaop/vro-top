@@ -63,11 +63,11 @@ export default function AttendanceScreen() {
           ListHeaderComponent={
             <View style={styles.titleRow}>
               <Text variant="headlineMedium">Attendance</Text>
-              {lastFetched !== null && (
+              {lastFetched !== null ? (
                 <Text variant="labelSmall" style={{ color: theme.colors.onSurfaceVariant }}>
-                  Updated {new Date(lastFetched).toLocaleTimeString()}
+                  {`Updated ${new Date(lastFetched).toLocaleTimeString()}`}
                 </Text>
-              )}
+              ) : null}
             </View>
           }
           ListEmptyComponent={

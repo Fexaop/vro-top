@@ -64,7 +64,7 @@ function SemCard({ item }: { item: SemesterResult }) {
           <Chip compact>{`SGPA ${item.sgpa?.toFixed(2) ?? 'N/A'}`}</Chip>
         </View>
         <Text variant="bodySmall" style={{ color: colors.onSurfaceVariant, marginTop: 4 }}>
-          Credits: {item.totalCredits} · CGPA: {item.cgpa?.toFixed(2) ?? 'N/A'}
+          {`Credits: ${item.totalCredits}  CGPA: ${item.cgpa?.toFixed(2) ?? 'N/A'}`}
         </Text>
         <Divider style={{ marginVertical: 8 }} />
         {item.courses.slice(0, 3).map((c) => (
@@ -75,11 +75,11 @@ function SemCard({ item }: { item: SemesterResult }) {
             <Text variant="bodySmall" style={{ fontWeight: 'bold' }}>{c.grade}</Text>
           </View>
         ))}
-        {item.courses.length > 3 && (
+        {item.courses.length > 3 ? (
           <Text variant="labelSmall" style={{ color: colors.primary, marginTop: 2 }}>
-            +{item.courses.length - 3} more · tap to expand
+            {`+${item.courses.length - 3} more`}
           </Text>
-        )}
+        ) : null}
       </Card.Content>
     </Card>
   );
@@ -119,15 +119,17 @@ export default function GradesHistory() {
         </Banner>
       )}
       <View style={styles.header}>
-        <View>
+        <View style={{ flex: 1 }}>
           <Text variant="headlineMedium">Grade History</Text>
-          {lastFetched !== null && (
+          {lastFetched !== null ? (
             <Text variant="labelSmall" style={{ color: colors.onSurfaceVariant }}>
-              Updated {new Date(lastFetched).toLocaleTimeString()}
+              {`Updated ${new Date(lastFetched).toLocaleTimeString()}`}
             </Text>
-          )}
+          ) : null}
         </View>
-        {latestCgpa != null && <Chip icon="school">{`CGPA ${latestCgpa.toFixed(2)}`}</Chip>}
+        {latestCgpa != null ? (
+          <Chip icon="school">{`CGPA ${latestCgpa.toFixed(2)}`}</Chip>
+        ) : null}
       </View>
       {isLoading && !hasCache ? (
         <View style={styles.center}><ActivityIndicator /></View>
