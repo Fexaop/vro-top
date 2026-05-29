@@ -1,12 +1,11 @@
 import type { ScraperAdapter } from './adapter';
-import type { LmsCredentials, VitolCredentials, VtopCredentials, VtopSession } from '@/types/auth';
+import type { LmsCredentials, VtopCredentials, VtopSession } from '@/types/auth';
 import type { AttendanceCourse, DayAttendance, TimetableEntry } from '@/types/attendance';
 import type { CalendarEvent } from '@/types/calendar';
 import type { ExamSlot } from '@/types/exam';
 import type { CourseGrade, SemesterResult } from '@/types/grades';
 import type { HostelInfo, LeaveRequest } from '@/types/hostel';
 import type { LmsAssignment } from '@/types/lms';
-import type { VitolAssignment } from '@/types/vitol';
 import { solveCaptcha } from './vtop/captcha';
 import { parseAttendanceHtml, parseDayAttendanceHtml, parseTimetableHtml } from './vtop/attendance';
 import { parseCurrentGradesHtml, parseGradeViewHtml } from './vtop/grades';
@@ -161,11 +160,4 @@ export class CfWorkerAdapter implements ScraperAdapter {
     return this.post('/lms/assignments', { credentials: creds });
   }
 
-  vitolLogin(creds: VtopCredentials): Promise<VitolCredentials> {
-    return this.post('/vitol/login', { credentials: creds });
-  }
-
-  fetchVitolAssignments(creds: VitolCredentials): Promise<VitolAssignment[]> {
-    return this.post('/vitol/assignments', { credentials: creds });
-  }
 }

@@ -15,9 +15,3 @@ export interface LmsCredentials {
   token: string;
   userId: number;
 }
-
-export interface VitolCredentials {
-  sessionKey: string;
-  userId: string;
-  host: string;
-}

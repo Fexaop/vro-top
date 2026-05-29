@@ -9,7 +9,6 @@ const SECTIONS = [
   { label: 'Academic Calendar', icon: 'calendar', href: '/(tabs)/calendar' },
   { label: 'Hostel', icon: 'home-city', href: '/(tabs)/hostel' },
   { label: 'LMS / Moodle', icon: 'book-open-variant', href: '/(tabs)/lms' },
-  { label: 'Vitol', icon: 'laptop', href: '/(tabs)/vitol' },
   { label: 'Settings', icon: 'cog', href: '/(tabs)/settings' },
 ] as const;
 

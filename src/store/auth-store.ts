@@ -1,22 +1,19 @@
 import { create } from 'zustand';
 import { secureStorage } from '@/lib/storage/secure';
-import type { LmsCredentials, VitolCredentials, VtopCredentials, VtopSession } from '@/types/auth';
+import type { LmsCredentials, VtopCredentials, VtopSession } from '@/types/auth';
 
 const CREDS_KEY = 'vtop_credentials';
 const SESSION_KEY = 'vtop_session';
 const LMS_KEY = 'lms_credentials';
-const VITOL_KEY = 'vitol_credentials';
 
 interface AuthState {
   vtopCreds: VtopCredentials | null;
   vtopSession: VtopSession | null;
   lmsCreds: LmsCredentials | null;
-  vitolCreds: VitolCredentials | null;
   isAuthenticated: boolean;
   setVtopCreds: (creds: VtopCredentials) => Promise<void>;
   setVtopSession: (session: VtopSession) => Promise<void>;
   setLmsCreds: (creds: LmsCredentials) => Promise<void>;
-  setVitolCreds: (creds: VitolCredentials) => Promise<void>;
   loadFromStorage: () => Promise<void>;
   logout: () => Promise<void>;
 }
@@ -25,7 +22,6 @@ export const useAuthStore = create<AuthState>((set) => ({
   vtopCreds: null,
   vtopSession: null,
   lmsCreds: null,
-  vitolCreds: null,
   isAuthenticated: false,
 
   setVtopCreds: async (creds) => {
@@ -43,23 +39,16 @@ export const useAuthStore = create<AuthState>((set) => ({
     set({ lmsCreds: creds });
   },
 
-  setVitolCreds: async (creds) => {
-    await secureStorage.set(VITOL_KEY, JSON.stringify(creds));
-    set({ vitolCreds: creds });
-  },
-
   loadFromStorage: async () => {
-    const [rawCreds, rawSession, rawLms, rawVitol] = await Promise.all([
+    const [rawCreds, rawSession, rawLms] = await Promise.all([
       secureStorage.get(CREDS_KEY),
       secureStorage.get(SESSION_KEY),
       secureStorage.get(LMS_KEY),
-      secureStorage.get(VITOL_KEY),
     ]);
 
     const vtopCreds = rawCreds ? (JSON.parse(rawCreds) as VtopCredentials) : null;
     const vtopSession = rawSession ? (JSON.parse(rawSession) as VtopSession) : null;
     const lmsCreds = rawLms ? (JSON.parse(rawLms) as LmsCredentials) : null;
-    const vitolCreds = rawVitol ? (JSON.parse(rawVitol) as VitolCredentials) : null;
 
     const sessionValid = vtopSession ? vtopSession.expiresAt > Date.now() : false;
 
@@ -67,7 +56,6 @@ export const useAuthStore = create<AuthState>((set) => ({
       vtopCreds,
       vtopSession: sessionValid ? vtopSession : null,
       lmsCreds,
-      vitolCreds,
       isAuthenticated: !!vtopCreds && sessionValid,
     });
   },
@@ -77,22 +65,17 @@ export const useAuthStore = create<AuthState>((set) => ({
       secureStorage.remove(CREDS_KEY),
       secureStorage.remove(SESSION_KEY),
       secureStorage.remove(LMS_KEY),
-      secureStorage.remove(VITOL_KEY),
     ]);
-    // Clear persisted data stores so no stale data shows after logout
     const { useAttendanceStore } = await import('./attendance-store');
     const { useGradesStore } = await import('./grades-store');
     const { useLmsStore } = await import('./lms-store');
-    const { useVitolStore } = await import('./vitol-store');
     useAttendanceStore.getState().clear();
     useGradesStore.getState().clear();
     useLmsStore.getState().clear();
-    useVitolStore.getState().clear();
     set({
       vtopCreds: null,
       vtopSession: null,
       lmsCreds: null,
-      vitolCreds: null,
       isAuthenticated: false,
     });
   },

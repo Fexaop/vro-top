@@ -68,7 +68,6 @@ export default function TabsLayout() {
       <Tabs.Screen name="calendar" options={{ href: null }} />
       <Tabs.Screen name="hostel" options={{ href: null }} />
       <Tabs.Screen name="lms" options={{ href: null }} />
-      <Tabs.Screen name="vitol" options={{ href: null }} />
       <Tabs.Screen name="settings" options={{ href: null }} />
     </Tabs>
   );

@@ -1,12 +1,11 @@
 import type { ScraperAdapter } from './adapter';
-import type { LmsCredentials, VitolCredentials, VtopCredentials, VtopSession } from '@/types/auth';
+import type { LmsCredentials, VtopCredentials, VtopSession } from '@/types/auth';
 import type { AttendanceCourse, DayAttendance, TimetableEntry } from '@/types/attendance';
 import type { CalendarEvent } from '@/types/calendar';
 import type { ExamSlot } from '@/types/exam';
 import type { CourseGrade, SemesterResult } from '@/types/grades';
 import type { HostelInfo, LeaveRequest } from '@/types/hostel';
 import type { LmsAssignment } from '@/types/lms';
-import type { VitolAssignment } from '@/types/vitol';
 
 import { vtopLogin, refreshVtopSession } from './vtop/auth';
 import { fetchAttendanceData, fetchDayAttendanceData } from './vtop/attendance';
@@ -16,7 +15,6 @@ import { fetchAcademicCalendarData } from './vtop/calendar';
 import { fetchHostelData, fetchLeaveData } from './vtop/profile';
 import { fetchTimetableData } from './vtop/timetable';
 import { lmsLogin as doLmsLogin, fetchLmsAssignmentsData } from './lms/auth';
-import { vitolLogin as doVitolLogin, fetchVitolAssignmentsData } from './vitol/auth';
 
 export class OnDeviceAdapter implements ScraperAdapter {
   vtopLogin(creds: VtopCredentials): Promise<VtopSession> {
@@ -57,11 +55,5 @@ export class OnDeviceAdapter implements ScraperAdapter {
   }
   fetchLmsAssignments(creds: LmsCredentials): Promise<LmsAssignment[]> {
     return fetchLmsAssignmentsData(creds);
-  }
-  vitolLogin(creds: VtopCredentials): Promise<VitolCredentials> {
-    return doVitolLogin(creds);
-  }
-  fetchVitolAssignments(creds: VitolCredentials): Promise<VitolAssignment[]> {
-    return fetchVitolAssignmentsData(creds);
   }
 }

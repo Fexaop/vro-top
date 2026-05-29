@@ -12,7 +12,6 @@ const NAV_ITEMS = [
   { href: '/(tabs)/calendar', label: 'Calendar', icon: 'calendar' },
   { href: '/(tabs)/hostel', label: 'Hostel', icon: 'home-city' },
   { href: '/(tabs)/lms', label: 'LMS', icon: 'book-open-variant' },
-  { href: '/(tabs)/vitol', label: 'Vitol', icon: 'laptop' },
   { href: '/(tabs)/settings', label: 'Settings', icon: 'cog' },
 ];
 
