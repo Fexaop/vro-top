@@ -100,7 +100,7 @@ export default function GradesScreen() {
       <View style={styles.header}>
         <View>
           <Text variant="headlineMedium">Grades</Text>
-          {lastFetched && (
+          {lastFetched !== null && (
             <Text variant="labelSmall" style={{ color: colors.onSurfaceVariant }}>
               Updated {new Date(lastFetched).toLocaleTimeString()}
             </Text>

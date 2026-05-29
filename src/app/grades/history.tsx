@@ -121,7 +121,7 @@ export default function GradesHistory() {
       <View style={styles.header}>
         <View>
           <Text variant="headlineMedium">Grade History</Text>
-          {lastFetched && (
+          {lastFetched !== null && (
             <Text variant="labelSmall" style={{ color: colors.onSurfaceVariant }}>
               Updated {new Date(lastFetched).toLocaleTimeString()}
             </Text>

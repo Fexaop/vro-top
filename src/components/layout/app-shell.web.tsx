@@ -23,7 +23,12 @@ export function AppShell() {
   return (
     <View style={styles.root}>
       <View style={[styles.sidebar, { backgroundColor: theme.colors.surface, borderRightColor: theme.colors.outlineVariant }]}>
-        <Drawer.Section title="VIT Portal" style={styles.sectionTitle}>
+        <Drawer.Section style={styles.section}>
+          <Drawer.Item
+            label="VIT Portal"
+            icon="school"
+            style={styles.sectionHeader}
+          />
           {NAV_ITEMS.map((item) => (
             <Drawer.Item
               key={item.href}
@@ -49,6 +54,7 @@ const styles = StyleSheet.create({
     borderRightWidth: StyleSheet.hairlineWidth,
     paddingTop: 16,
   },
-  sectionTitle: { marginHorizontal: 8 },
+  section: { marginHorizontal: 0 },
+  sectionHeader: { opacity: 0.7 },
   content: { flex: 1 },
 });
