@@ -12,19 +12,20 @@ export interface SemesterOption {
 }
 
 // Hardcoded semester list — same approach as UniCC (no VTOP endpoint for semester list)
+// VTOP semester type codes: 01 = Fall, 05 = Winter, 07 = Summer
 export const SEMESTER_LIST: SemesterOption[] = [
   { code: 'CH20262701', label: 'Fall 2026-27' },
-  { code: 'CH20252607', label: 'Winter 2025-26' },
-  { code: 'CH20252605', label: 'Summer 2025-26' },
+  { code: 'CH20252607', label: 'Summer 2025-26' },
+  { code: 'CH20252605', label: 'Winter 2025-26' },
   { code: 'CH20252601', label: 'Fall 2025-26' },
-  { code: 'CH20242507', label: 'Winter 2024-25' },
-  { code: 'CH20242505', label: 'Summer 2024-25' },
+  { code: 'CH20242507', label: 'Summer 2024-25' },
+  { code: 'CH20242505', label: 'Winter 2024-25' },
   { code: 'CH20242501', label: 'Fall 2024-25' },
-  { code: 'CH20232407', label: 'Winter 2023-24' },
-  { code: 'CH20232405', label: 'Summer 2023-24' },
+  { code: 'CH20232407', label: 'Summer 2023-24' },
+  { code: 'CH20232405', label: 'Winter 2023-24' },
   { code: 'CH20232401', label: 'Fall 2023-24' },
-  { code: 'CH20222307', label: 'Winter 2022-23' },
-  { code: 'CH20222305', label: 'Summer 2022-23' },
+  { code: 'CH20222307', label: 'Summer 2022-23' },
+  { code: 'CH20222305', label: 'Winter 2022-23' },
   { code: 'CH20222301', label: 'Fall 2022-23' },
 ];
 

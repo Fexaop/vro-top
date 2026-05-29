@@ -21,8 +21,8 @@ export function AppShell() {
   const pathname = usePathname();
 
   return (
-    <View className="flex-1 flex-row">
-      <View style={{ width: 240, borderRightWidth: 0.5, paddingTop: 16, backgroundColor: theme.colors.surface, borderRightColor: theme.colors.outlineVariant }}>
+    <View style={{ flex: 1, flexDirection: 'row', height: '100%', backgroundColor: theme.colors.background }}>
+      <View style={{ width: 240, borderRightWidth: 0.5, paddingTop: 16, backgroundColor: theme.colors.surface, borderRightColor: theme.colors.outlineVariant, overflowY: 'auto' } as never}>
         <Drawer.Section style={{ marginHorizontal: 0 }}>
           <Drawer.Item
             label="VIT Portal"
@@ -40,7 +40,7 @@ export function AppShell() {
           ))}
         </Drawer.Section>
       </View>
-      <View className="flex-1">
+      <View style={{ flex: 1, overflowY: 'auto' } as never}>
         <Slot />
       </View>
     </View>

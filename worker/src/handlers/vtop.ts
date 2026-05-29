@@ -248,8 +248,12 @@ function currentSemesterCode(): string {
   const now = new Date();
   const year = now.getFullYear();
   const month = now.getMonth() + 1;
-  const semYear = month >= 7 ? year : year - 1;
+  // VTOP semester type codes: 01 = Fall (Jul-Nov), 05 = Winter (Dec-Apr), 07 = Summer (May-Jun)
+  let semYear: number;
+  let semType: string;
+  if (month >= 7) { semYear = year; semType = '01'; }
+  else if (month >= 5) { semYear = year - 1; semType = '07'; }
+  else { semYear = year - 1; semType = '05'; }
   const nextYear = ((semYear + 1) % 100).toString().padStart(2, '0');
-  const semType = month >= 7 ? '01' : '07';
   return `CH${semYear}${nextYear}${semType}`;
 }

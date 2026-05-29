@@ -85,9 +85,10 @@ export default function GradesScreen() {
 
   const displayData = data ?? cachedGrades;
   const hasData = displayData.length > 0;
-  const cgpa = displayData.length > 0
-    ? (displayData.reduce((sum, g) => sum + (g.gradePoint != null && g.gradePoint > 0 ? g.gradePoint * g.credits : 0), 0) /
-        Math.max(displayData.reduce((sum, g) => sum + (g.gradePoint != null && g.gradePoint > 0 ? g.credits : 0), 0), 1)).toFixed(2)
+  const graded = displayData.filter((g) => g.gradePoint != null && g.gradePoint > 0);
+  const gradedCredits = graded.reduce((sum, g) => sum + g.credits, 0);
+  const cgpa = gradedCredits > 0
+    ? (graded.reduce((sum, g) => sum + g.gradePoint! * g.credits, 0) / gradedCredits).toFixed(2)
     : null;
 
   const semCode = session?.semesterCode ?? null;

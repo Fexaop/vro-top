@@ -49,9 +49,10 @@ export default function DashboardScreen() {
   const overallAtt = attendance?.length
     ? (attendance.reduce((s, c) => s + c.percentage, 0) / attendance.length).toFixed(1)
     : null;
-  const cgpa = grades?.length
-    ? (grades.reduce((s, g) => s + (g.gradePoint != null && g.gradePoint > 0 ? g.gradePoint * g.credits : 0), 0) /
-        Math.max(grades.reduce((s, g) => s + (g.gradePoint != null && g.gradePoint > 0 ? g.credits : 0), 0), 1)).toFixed(2)
+  const gradedCourses = grades?.filter((g) => g.gradePoint != null && g.gradePoint > 0) ?? [];
+  const gradedCredits = gradedCourses.reduce((s, g) => s + g.credits, 0);
+  const cgpa = gradedCredits > 0
+    ? (gradedCourses.reduce((s, g) => s + g.gradePoint! * g.credits, 0) / gradedCredits).toFixed(2)
     : null;
   const nextExam = exams?.filter((e) => new Date(e.date) >= new Date()).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())[0];
 
