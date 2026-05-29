@@ -36,17 +36,24 @@ export class CfWorkerAdapter implements ScraperAdapter {
   }
 
   async vtopLogin(creds: VtopCredentials): Promise<VtopSession> {
+    // Each /vtop/prelogin call is a fresh Worker invocation (separate subrequest budget).
+    // The retry loop lives here in the client so the worker stays under CF's 50-subrequest limit.
     for (let attempt = 0; attempt < MAX_CAPTCHA_RETRIES; attempt++) {
-      // Step 1: Worker fetches VTOP prelogin page — returns cookies + CSRF + captcha image
-      const prelogin = await this.post<{ cookies: string; csrfToken: string; captchaBase64: string; error?: string }>(
-        '/vtop/prelogin', {},
-      );
-      if (prelogin.error) throw new Error(prelogin.error);
+      type PreloginResult =
+        | { recaptcha: true }
+        | { cookies: string; csrfToken: string; captchaBase64: string }
+        | { error: string };
 
-      // Step 2: Solve CAPTCHA on-device (never leaves the device)
+      const prelogin = await this.post<PreloginResult>('/vtop/prelogin', {});
+
+      if ('error' in prelogin) throw new Error(prelogin.error);
+
+      // Worker hit reCAPTCHA this round — retry (next invocation gets a fresh VTOP session)
+      if ('recaptcha' in prelogin) continue;
+
+      // Solve the image captcha on-device
       const { solved } = await solveCaptcha(prelogin.captchaBase64);
 
-      // Step 3: Worker does the login POST with our solved CAPTCHA
       const res = await this.postRaw('/vtop/login', {
         credentials: creds,
         captchaSolution: solved,
@@ -54,7 +61,7 @@ export class CfWorkerAdapter implements ScraperAdapter {
         csrfToken: prelogin.csrfToken,
       });
 
-      if (res.status === 422) continue; // wrong captcha — retry
+      if (res.status === 422) continue; // wrong captcha answer — retry
       if (!res.ok) {
         const data = await res.json() as { error?: string };
         throw new Error(data.error ?? `Worker error ${res.status}`);
@@ -62,7 +69,7 @@ export class CfWorkerAdapter implements ScraperAdapter {
 
       return res.json() as Promise<VtopSession>;
     }
-    throw new Error(`Login failed after ${MAX_CAPTCHA_RETRIES} attempts. VTOP may be using Google CAPTCHA.`);
+    throw new Error(`Login failed after ${MAX_CAPTCHA_RETRIES} attempts.`);
   }
 
   refreshSession(creds: VtopCredentials, _old: VtopSession): Promise<VtopSession> {
