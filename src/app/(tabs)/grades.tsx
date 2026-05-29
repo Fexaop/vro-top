@@ -9,15 +9,19 @@ import { useVtopSession } from '@/hooks/use-vtop-session';
 import type { CourseGrade } from '@/types/grades';
 
 function gradeColor(grade: string, colors: Record<string, string>): string {
-  if (['O', 'A+'].includes(grade)) return colors.tertiary;
+  if (['O', 'S', 'A+'].includes(grade)) return colors.tertiary;
   if (['A', 'B+'].includes(grade)) return colors.primary;
-  if (['B', 'C'].includes(grade)) return colors.secondary;
-  if (['F', 'N'].includes(grade)) return colors.error;
+  if (['B', 'C+', 'C'].includes(grade)) return colors.secondary;
+  if (['F', 'W', 'N'].includes(grade)) return colors.error;
   return colors.onSurfaceVariant;
 }
 
 function GradeCard({ item }: { item: CourseGrade }) {
   const { colors } = useTheme();
+  const gc = gradeColor(item.grade, colors as unknown as Record<string, string>);
+  const totalScored = item.components.reduce((s, c) => s + (c.markScored ?? 0), 0);
+  const totalMax = item.components.reduce((s, c) => s + c.maxMark, 0);
+
   return (
     <Card style={styles.card} mode="outlined">
       <Card.Content>
@@ -26,18 +30,28 @@ function GradeCard({ item }: { item: CourseGrade }) {
             <Text variant="titleSmall" numberOfLines={1}>{item.courseTitle}</Text>
             <Text variant="bodySmall" style={{ color: colors.onSurfaceVariant }}>{item.courseCode}</Text>
           </View>
-          <Chip
-            style={{ backgroundColor: gradeColor(item.grade, colors as unknown as Record<string, string>) + '20' }}
-            textStyle={{ color: gradeColor(item.grade, colors as unknown as Record<string, string>), fontWeight: 'bold' }}
-          >
-            {item.grade || 'N/A'}
-          </Chip>
+          <View style={{ alignItems: 'flex-end', gap: 2 }}>
+            <Chip
+              style={{ backgroundColor: gc + '20' }}
+              textStyle={{ color: gc, fontWeight: 'bold' }}
+            >
+              {item.grade || 'N/A'}
+            </Chip>
+            <Text variant="labelSmall" style={{ color: colors.onSurfaceVariant }}>
+              {item.credits} cr · GP {item.gradePoint?.toFixed(1) ?? 'N/A'}
+            </Text>
+          </View>
         </View>
-        <View style={[styles.row, { marginTop: 8 }]}>
-          <Text variant="bodySmall" style={{ color: colors.onSurfaceVariant }}>Credits: {item.credits}</Text>
-          <Text variant="bodySmall" style={{ color: colors.onSurfaceVariant }}>GPA: {item.gradePoint ?? 'N/A'}</Text>
-          <Text variant="bodySmall" style={{ color: colors.onSurfaceVariant }}>Marks: {item.totalMarks != null ? item.totalMarks : 'N/A'}</Text>
-        </View>
+        {totalMax > 0 && (
+          <View style={[styles.row, { marginTop: 6 }]}>
+            <Text variant="labelSmall" style={{ color: colors.onSurfaceVariant }}>
+              Marks: {totalScored.toFixed(1)} / {totalMax}
+            </Text>
+            <Text variant="labelSmall" style={{ color: colors.onSurfaceVariant }}>
+              {item.components.length} components
+            </Text>
+          </View>
+        )}
       </Card.Content>
     </Card>
   );
@@ -48,12 +62,13 @@ export default function GradesScreen() {
   const scraper = useScraper();
   const { ensureFreshSession } = useVtopSession();
   const creds = useAuthStore((s) => s.vtopCredentials);
+  const session = useAuthStore((s) => s.vtopSession);
 
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['grades', 'current'],
     queryFn: async () => {
-      const session = await ensureFreshSession();
-      return scraper.fetchCurrentGrades(session);
+      const s = await ensureFreshSession();
+      return scraper.fetchCurrentGrades(s);
     },
     enabled: !!creds,
     staleTime: 5 * 60 * 1000,
@@ -61,8 +76,10 @@ export default function GradesScreen() {
 
   const cgpa = data?.length
     ? (data.reduce((sum, g) => sum + (g.gradePoint ?? 0) * g.credits, 0) /
-        data.reduce((sum, g) => sum + (g.gradePoint != null ? g.credits : 0), 0)).toFixed(2)
+        Math.max(data.reduce((sum, g) => sum + (g.gradePoint != null ? g.credits : 0), 0), 1)).toFixed(2)
     : null;
+
+  const semCode = session?.semesterCode;
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
@@ -78,6 +95,15 @@ export default function GradesScreen() {
           <Button mode="text" onPress={() => router.push('/grades/history')}>History</Button>
         </View>
       </View>
+      {semCode && (
+        <Button
+          mode="outlined"
+          style={{ marginHorizontal: 16, marginBottom: 8 }}
+          onPress={() => router.push(`/grades/${encodeURIComponent(semCode)}`)}
+        >
+          View Component-wise Marks
+        </Button>
+      )}
       {isLoading ? (
         <View style={styles.center}><ActivityIndicator /></View>
       ) : (
