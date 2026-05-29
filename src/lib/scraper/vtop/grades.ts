@@ -56,7 +56,8 @@ export async function fetchCurrentGradesData(session: VtopSession): Promise<Cour
         courseTitle: cols[3]?.text.trim() ?? '',
         credits: parseFloat(cols[5]?.text.trim() ?? '0'),
         grade: '',
-        gradePoint: 0,
+        gradePoint: null,
+        totalMarks: null,
         components: [],
       };
       return;
@@ -141,7 +142,7 @@ export async function fetchAllSemestersData(session: VtopSession): Promise<Semes
           }
           creditsRegistered += credits;
 
-          courses.push({ courseCode: code, courseTitle: title, credits, grade, gradePoint, components: [] });
+          courses.push({ courseCode: code, courseTitle: title, credits, grade, gradePoint, totalMarks: null, components: [] });
         });
 
         if (courses.length === 0) return null;
@@ -149,11 +150,12 @@ export async function fetchAllSemestersData(session: VtopSession): Promise<Semes
         return {
           semesterCode: semId,
           semesterName: formatSemName(semId),
-          sgpa,
-          cgpa,
+          sgpa: sgpa || null,
+          cgpa: cgpa || null,
           courses,
           creditsEarned,
           creditsRegistered,
+          totalCredits: creditsRegistered,
         };
       } catch {
         return null;
