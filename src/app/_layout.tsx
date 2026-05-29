@@ -1,5 +1,16 @@
 import { useEffect } from 'react';
-import { Platform } from 'react-native';
+import { LogBox, Platform } from 'react-native';
+
+// Suppress known library warnings on web — react-native-paper uses native-only
+// style props (shadow*, pointerEvents, useNativeDriver) that don't map to web.
+if (Platform.OS === 'web') {
+  LogBox.ignoreLogs([
+    'props.pointerEvents is deprecated',
+    '"shadow*" style props are deprecated',
+    'useNativeDriver` is not supported',
+    'Animated: `useNativeDriver`',
+  ]);
+}
 import { PaperProvider } from 'react-native-paper';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { useColorScheme } from '@/hooks/use-color-scheme';
