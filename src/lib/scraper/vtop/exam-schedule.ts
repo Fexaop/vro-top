@@ -17,24 +17,13 @@ async function vtopPost(path: string, params: URLSearchParams, session: VtopSess
   return res.text();
 }
 
-export async function fetchExamScheduleData(session: VtopSession): Promise<ExamSlot[]> {
-  const html = await vtopPost(
-    '/vtop/examinations/doSearchExamScheduleForStudent',
-    new URLSearchParams({
-      authorizedID: session.userId,
-      semesterSubId: session.semesterCode,
-      _csrf: session.csrfToken,
-    }),
-    session,
-  );
-
+export function parseExamScheduleHtml(html: string): ExamSlot[] {
   const root = parseHtml(html);
   const slots: ExamSlot[] = [];
   let currentType: string = '';
 
   root.querySelectorAll('table.customTable tr').forEach((row) => {
     const tds = row.querySelectorAll('td');
-    // Section header row (colspan=13)
     if (tds.length === 1 && tds[0]?.getAttribute('colspan') === '13') {
       currentType = tds[0].text.trim();
       return;
@@ -58,4 +47,17 @@ export async function fetchExamScheduleData(session: VtopSession): Promise<ExamS
   });
 
   return slots;
+}
+
+export async function fetchExamScheduleData(session: VtopSession): Promise<ExamSlot[]> {
+  const html = await vtopPost(
+    '/vtop/examinations/doSearchExamScheduleForStudent',
+    new URLSearchParams({
+      authorizedID: session.userId,
+      semesterSubId: session.semesterCode,
+      _csrf: session.csrfToken,
+    }),
+    session,
+  );
+  return parseExamScheduleHtml(html);
 }

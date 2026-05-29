@@ -1,7 +1,7 @@
 import type { VtopSession } from '@/types/auth';
 import type { CourseGrade, GradeComponent, SemesterResult } from '@/types/grades';
 import { VTOP_BASE } from './auth';
-import { parseHtml, tableToRows } from '@/lib/html/parser';
+import { parseHtml } from '@/lib/html/parser';
 
 const UA =
   'Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36';
@@ -27,19 +27,7 @@ function gradeToPoints(grade: string): number {
   return map[grade] ?? 0;
 }
 
-// Fetch current semester marks (component-wise)
-export async function fetchCurrentGradesData(session: VtopSession): Promise<CourseGrade[]> {
-  const html = await vtopPost(
-    '/vtop/examinations/doStudentMarkView',
-    new URLSearchParams({
-      authorizedID: session.userId,
-      semesterSubId: session.semesterCode,
-      _csrf: session.csrfToken,
-      x: Date.now().toString(),
-    }),
-    session,
-  );
-
+export function parseCurrentGradesHtml(html: string): CourseGrade[] {
   const root = parseHtml(html);
   const courses: CourseGrade[] = [];
   let currentCourse: CourseGrade | null = null;
@@ -48,7 +36,6 @@ export async function fetchCurrentGradesData(session: VtopSession): Promise<Cour
     const cols = row.querySelectorAll('td');
     if (cols.length === 0) return;
 
-    // Header row for a course
     if (row.classList.contains('tableContent') && cols.length >= 9) {
       if (currentCourse) courses.push(currentCourse);
       currentCourse = {
@@ -63,7 +50,6 @@ export async function fetchCurrentGradesData(session: VtopSession): Promise<Cour
       return;
     }
 
-    // Component rows
     if (currentCourse && cols.length >= 5) {
       const component = cols[2]?.text.trim() ?? '';
       const max = parseFloat(cols[3]?.text.trim() ?? '0');
@@ -79,6 +65,70 @@ export async function fetchCurrentGradesData(session: VtopSession): Promise<Cour
   });
   if (currentCourse) courses.push(currentCourse);
   return courses;
+}
+
+export async function fetchCurrentGradesData(session: VtopSession): Promise<CourseGrade[]> {
+  const html = await vtopPost(
+    '/vtop/examinations/doStudentMarkView',
+    new URLSearchParams({
+      authorizedID: session.userId,
+      semesterSubId: session.semesterCode,
+      _csrf: session.csrfToken,
+      x: Date.now().toString(),
+    }),
+    session,
+  );
+  return parseCurrentGradesHtml(html);
+}
+
+export function parseGradeViewHtml(html: string, semId: string): SemesterResult | null {
+  const root = parseHtml(html);
+  const courses: CourseGrade[] = [];
+  let sgpa = 0;
+  let cgpa = 0;
+  let creditsEarned = 0;
+  let creditsRegistered = 0;
+
+  root.querySelectorAll('table tbody tr').forEach((row) => {
+    const cols = row.querySelectorAll('td');
+    if (cols.length < 6) return;
+
+    const txt = row.text.trim();
+    const gpaMatch = txt.match(/SGPA[:\s]+([0-9.]+)/i);
+    if (gpaMatch) {
+      sgpa = parseFloat(gpaMatch[1] ?? '0');
+      const cgpaMatch = txt.match(/CGPA[:\s]+([0-9.]+)/i);
+      if (cgpaMatch) cgpa = parseFloat(cgpaMatch[1] ?? '0');
+      return;
+    }
+
+    const code = cols[1]?.text.trim() ?? '';
+    const title = cols[2]?.text.trim() ?? '';
+    const grade = cols[5]?.text.trim() ?? '';
+    const credits = parseFloat(cols[4]?.text.trim() ?? '0');
+    if (!code || !grade) return;
+
+    const gradePoint = gradeToPoints(grade);
+    if (grade !== 'F' && grade !== 'W' && grade !== 'N') {
+      creditsEarned += credits;
+    }
+    creditsRegistered += credits;
+
+    courses.push({ courseCode: code, courseTitle: title, credits, grade, gradePoint, totalMarks: null, components: [] });
+  });
+
+  if (courses.length === 0) return null;
+
+  return {
+    semesterCode: semId,
+    semesterName: formatSemName(semId),
+    sgpa: sgpa || null,
+    cgpa: cgpa || null,
+    courses,
+    creditsEarned,
+    creditsRegistered,
+    totalCredits: creditsRegistered,
+  };
 }
 
 function buildSemesterCodes(userId: string): string[] {
@@ -108,55 +158,7 @@ export async function fetchAllSemestersData(session: VtopSession): Promise<Semes
           }),
           session,
         );
-
-        const root = parseHtml(html);
-        const courses: CourseGrade[] = [];
-        let sgpa = 0;
-        let cgpa = 0;
-        let creditsEarned = 0;
-        let creditsRegistered = 0;
-
-        root.querySelectorAll('table tbody tr').forEach((row) => {
-          const cols = row.querySelectorAll('td');
-          if (cols.length < 6) return;
-
-          // GPA row detection
-          const txt = row.text.trim();
-          const gpaMatch = txt.match(/SGPA[:\s]+([0-9.]+)/i);
-          if (gpaMatch) {
-            sgpa = parseFloat(gpaMatch[1] ?? '0');
-            const cgpaMatch = txt.match(/CGPA[:\s]+([0-9.]+)/i);
-            if (cgpaMatch) cgpa = parseFloat(cgpaMatch[1] ?? '0');
-            return;
-          }
-
-          const code = cols[1]?.text.trim() ?? '';
-          const title = cols[2]?.text.trim() ?? '';
-          const grade = cols[5]?.text.trim() ?? '';
-          const credits = parseFloat(cols[4]?.text.trim() ?? '0');
-          if (!code || !grade) return;
-
-          const gradePoint = gradeToPoints(grade);
-          if (grade !== 'F' && grade !== 'W' && grade !== 'N') {
-            creditsEarned += credits;
-          }
-          creditsRegistered += credits;
-
-          courses.push({ courseCode: code, courseTitle: title, credits, grade, gradePoint, totalMarks: null, components: [] });
-        });
-
-        if (courses.length === 0) return null;
-
-        return {
-          semesterCode: semId,
-          semesterName: formatSemName(semId),
-          sgpa: sgpa || null,
-          cgpa: cgpa || null,
-          courses,
-          creditsEarned,
-          creditsRegistered,
-          totalCredits: creditsRegistered,
-        };
+        return parseGradeViewHtml(html, semId);
       } catch {
         return null;
       }
@@ -167,7 +169,6 @@ export async function fetchAllSemestersData(session: VtopSession): Promise<Semes
 }
 
 function formatSemName(code: string): string {
-  // e.g. CH202425_01 → Winter 2024-25, _07 → Summer, _05 → Fall
   const match = code.match(/CH(\d{4})(\d{2})(\d{2})/);
   if (!match) return code;
   const [, y1, y2, month] = match;

@@ -12,7 +12,7 @@ export const REFRESH_TASK = 'unicc-refresh';
 TaskManager.defineTask(REFRESH_TASK, async () => {
   try {
     const credsRaw = await secureStorage.get('vtopCredentials');
-    if (!credsRaw) return BackgroundTask.BackgroundTaskResult.NoData;
+    if (!credsRaw) return BackgroundTask.BackgroundTaskResult.Failed;
 
     const creds: VtopCredentials = JSON.parse(credsRaw);
     const adapter = new OnDeviceAdapter();

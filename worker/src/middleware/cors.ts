@@ -5,6 +5,6 @@ export const corsMiddleware: MiddlewareHandler = async (c, next) => {
   c.header('Access-Control-Allow-Origin', origin);
   c.header('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
   c.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-  if (c.req.method === 'OPTIONS') return c.text('', 204);
+  if (c.req.method === 'OPTIONS') return c.text('', 200);
   await next();
 };

@@ -213,8 +213,8 @@ export async function handleVtopExam(c: Context): Promise<Response> {
 }
 
 export async function handleVtopCalendar(c: Context): Promise<Response> {
-  const { session, month, year } = await c.req.json<{ session: Session; month: number; year: number }>();
-  return c.json({ html: await vtopPost(session, '/vtop/processViewCalendar', { month: String(month), year: String(year), semesterSubId: session.semesterCode }) });
+  const { session, calDate } = await c.req.json<{ session: Session; calDate: string }>();
+  return c.json({ html: await vtopPost(session, '/vtop/processViewCalendar', { calDate, semSubId: session.semesterCode }) });
 }
 
 export async function handleVtopProfile(c: Context): Promise<Response> {

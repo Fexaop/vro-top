@@ -17,7 +17,7 @@ async function vtopPost(path: string, params: URLSearchParams, session: VtopSess
   return res.text();
 }
 
-function buildCalDates(semCode: string): string[] {
+export function buildCalDates(semCode: string): string[] {
   const semMonth = semCode.slice(-2);
   const startYear = parseInt(semCode.slice(2, 6), 10);
   const next = startYear + 1;
@@ -37,6 +37,34 @@ function classifyEvent(text: string): CalendarEventType {
   return 'Other';
 }
 
+export function parseCalendarHtml(html: string): CalendarEvent[] {
+  const root = parseHtml(html);
+  const events: CalendarEvent[] = [];
+
+  root.querySelectorAll('td[data-date]').forEach((cell) => {
+    const dateAttr = cell.getAttribute('data-date') ?? '';
+    const eventEls = cell.querySelectorAll('.event, span.event, .calendarEvent');
+    for (const el of eventEls) {
+      const text = el.text.trim();
+      if (!text) continue;
+      events.push({ date: dateAttr, text, type: classifyEvent(text) });
+    }
+  });
+
+  root.querySelectorAll('table tr').forEach((row) => {
+    const cols = row.querySelectorAll('td');
+    if (cols.length >= 3) {
+      const dateText = cols[0]?.text.trim() ?? '';
+      const eventText = cols[2]?.text.trim() ?? '';
+      if (dateText && eventText) {
+        events.push({ date: dateText, text: eventText, type: classifyEvent(eventText) });
+      }
+    }
+  });
+
+  return events;
+}
+
 export async function fetchAcademicCalendarData(session: VtopSession): Promise<CalendarEvent[]> {
   const dates = buildCalDates(session.semesterCode);
   const events: CalendarEvent[] = [];
@@ -54,30 +82,7 @@ export async function fetchAcademicCalendarData(session: VtopSession): Promise<C
           }),
           session,
         );
-
-        const root = parseHtml(html);
-        // Calendar table: each td.calendarDay has data-date and events inside
-        root.querySelectorAll('td[data-date]').forEach((cell) => {
-          const dateAttr = cell.getAttribute('data-date') ?? '';
-          const eventEls = cell.querySelectorAll('.event, span.event, .calendarEvent');
-          for (const el of eventEls) {
-            const text = el.text.trim();
-            if (!text) continue;
-            events.push({ date: dateAttr, text, type: classifyEvent(text) });
-          }
-        });
-
-        // Fallback: look for table rows with date + event text
-        root.querySelectorAll('table tr').forEach((row) => {
-          const cols = row.querySelectorAll('td');
-          if (cols.length >= 3) {
-            const dateText = cols[0]?.text.trim() ?? '';
-            const eventText = cols[2]?.text.trim() ?? '';
-            if (dateText && eventText) {
-              events.push({ date: dateText, text: eventText, type: classifyEvent(eventText) });
-            }
-          }
-        });
+        events.push(...parseCalendarHtml(html));
       } catch { /* skip failed month */ }
     }),
   );

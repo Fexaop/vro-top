@@ -11,7 +11,7 @@ export default function HostelScreen() {
   const { colors } = useTheme();
   const scraper = useScraper();
   const { ensureFreshSession } = useVtopSession();
-  const creds = useAuthStore((s) => s.vtopCredentials);
+  const creds = useAuthStore((s) => s.vtopCreds);
 
   const { data: hostel, isLoading: hostelLoading, error: hostelError, refetch: refetchHostel } = useQuery({
     queryKey: ['hostel-info'],

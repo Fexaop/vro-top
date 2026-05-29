@@ -12,7 +12,7 @@ export default function DashboardScreen() {
   const { colors } = useTheme();
   const scraper = useScraper();
   const { ensureFreshSession } = useVtopSession();
-  const creds = useAuthStore((s) => s.vtopCredentials);
+  const creds = useAuthStore((s) => s.vtopCreds);
   useBackgroundTask();
 
   const { data: attendance, isLoading: attLoading } = useQuery({

@@ -42,7 +42,7 @@ export default function ExamScreen() {
   const { colors } = useTheme();
   const scraper = useScraper();
   const { ensureFreshSession } = useVtopSession();
-  const creds = useAuthStore((s) => s.vtopCredentials);
+  const creds = useAuthStore((s) => s.vtopCreds);
 
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['exam-schedule'],

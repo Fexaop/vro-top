@@ -87,7 +87,7 @@ export default function SemesterDetail() {
   const { colors } = useTheme();
   const scraper = useScraper();
   const { ensureFreshSession } = useVtopSession();
-  const creds = useAuthStore((s) => s.vtopCredentials);
+  const creds = useAuthStore((s) => s.vtopCreds);
   const session = useAuthStore((s) => s.vtopSession);
 
   const isCurrent = session?.semesterCode === semCode;

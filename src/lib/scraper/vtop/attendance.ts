@@ -1,7 +1,7 @@
 import type { VtopSession } from '@/types/auth';
 import type { AttendanceCourse, DayAttendance, PeriodAttendance, TimetableEntry } from '@/types/attendance';
 import { VTOP_BASE } from './auth';
-import { parseHtml, tableToRows } from '@/lib/html/parser';
+import { parseHtml } from '@/lib/html/parser';
 
 const VTOP_UA =
   'Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36';
@@ -20,18 +20,7 @@ async function vtopPost(path: string, params: URLSearchParams, session: VtopSess
   return res.text();
 }
 
-export async function fetchAttendanceData(session: VtopSession): Promise<AttendanceCourse[]> {
-  const html = await vtopPost(
-    '/vtop/processViewStudentAttendance',
-    new URLSearchParams({
-      authorizedID: session.userId,
-      semesterSubId: session.semesterCode,
-      _csrf: session.csrfToken,
-      x: Date.now().toString(),
-    }),
-    session,
-  );
-
+export function parseAttendanceHtml(html: string): AttendanceCourse[] {
   const root = parseHtml(html);
   const rows = root.querySelectorAll('#getStudentDetails table tbody tr');
   const courses: AttendanceCourse[] = [];
@@ -66,28 +55,21 @@ export async function fetchAttendanceData(session: VtopSession): Promise<Attenda
   return courses;
 }
 
-export async function fetchDayAttendanceData(
-  session: VtopSession,
-  courseCode: string,
-): Promise<DayAttendance[]> {
-  // courseCode format we stored includes classId via the onclick attr
-  // Caller must supply classId and slotName extracted from the course list
-  // For simplicity, this function receives the raw classId:slotName as courseCode param
-  const [classId, slotName] = courseCode.split(':');
-  if (!classId || !slotName) return [];
-
+export async function fetchAttendanceData(session: VtopSession): Promise<AttendanceCourse[]> {
   const html = await vtopPost(
-    '/vtop/processViewAttendanceDetail',
+    '/vtop/processViewStudentAttendance',
     new URLSearchParams({
-      _csrf: session.csrfToken,
       authorizedID: session.userId,
+      semesterSubId: session.semesterCode,
+      _csrf: session.csrfToken,
       x: Date.now().toString(),
-      classId,
-      slotName,
     }),
     session,
   );
+  return parseAttendanceHtml(html);
+}
 
+export function parseDayAttendanceHtml(html: string, classId: string, slotName: string, courseCode: string): DayAttendance[] {
   const root = parseHtml(html);
   const rows = root.querySelectorAll('table.table tr');
   const byDate = new Map<string, PeriodAttendance[]>();
@@ -106,18 +88,29 @@ export async function fetchDayAttendanceData(
   return [...byDate.entries()].map(([date, periods]) => ({ date, periods }));
 }
 
-export async function fetchTimetableData(session: VtopSession): Promise<TimetableEntry[]> {
+export async function fetchDayAttendanceData(
+  session: VtopSession,
+  courseCode: string,
+): Promise<DayAttendance[]> {
+  const [classId, slotName] = courseCode.split(':');
+  if (!classId || !slotName) return [];
+
   const html = await vtopPost(
-    '/vtop/processViewTimeTable',
+    '/vtop/processViewAttendanceDetail',
     new URLSearchParams({
-      authorizedID: session.userId,
-      semesterSubId: session.semesterCode,
       _csrf: session.csrfToken,
+      authorizedID: session.userId,
       x: Date.now().toString(),
+      classId,
+      slotName,
     }),
     session,
   );
 
+  return parseDayAttendanceHtml(html, classId, slotName, courseCode);
+}
+
+export function parseTimetableHtml(html: string): TimetableEntry[] {
   const root = parseHtml(html);
   const entries: TimetableEntry[] = [];
 
@@ -143,4 +136,18 @@ export async function fetchTimetableData(session: VtopSession): Promise<Timetabl
   });
 
   return entries;
+}
+
+export async function fetchTimetableData(session: VtopSession): Promise<TimetableEntry[]> {
+  const html = await vtopPost(
+    '/vtop/processViewTimeTable',
+    new URLSearchParams({
+      authorizedID: session.userId,
+      semesterSubId: session.semesterCode,
+      _csrf: session.csrfToken,
+      x: Date.now().toString(),
+    }),
+    session,
+  );
+  return parseTimetableHtml(html);
 }

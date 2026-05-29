@@ -17,13 +17,7 @@ async function vtopPost(path: string, params: URLSearchParams, session: VtopSess
   return res.text();
 }
 
-export async function fetchHostelData(session: VtopSession): Promise<HostelInfo> {
-  const html = await vtopPost(
-    '/vtop/studentsRecord/StudentProfileAllView',
-    new URLSearchParams({ verifyMenu: 'true', authorizedID: session.userId, _csrf: session.csrfToken, nocache: Date.now().toString() }),
-    session,
-  );
-
+export function parseHostelHtml(html: string): HostelInfo {
   const root = parseHtml(html);
   const getText = (label: string): string => {
     const els = root.querySelectorAll('td, th, label, span');
@@ -45,13 +39,16 @@ export async function fetchHostelData(session: VtopSession): Promise<HostelInfo>
   };
 }
 
-export async function fetchLeaveData(session: VtopSession): Promise<LeaveRequest[]> {
+export async function fetchHostelData(session: VtopSession): Promise<HostelInfo> {
   const html = await vtopPost(
-    '/vtop/hostels/student/leave/1',
+    '/vtop/studentsRecord/StudentProfileAllView',
     new URLSearchParams({ verifyMenu: 'true', authorizedID: session.userId, _csrf: session.csrfToken, nocache: Date.now().toString() }),
     session,
   );
+  return parseHostelHtml(html);
+}
 
+export function parseLeaveHtml(html: string): LeaveRequest[] {
   const root = parseHtml(html);
   const leaves: LeaveRequest[] = [];
 
@@ -70,4 +67,13 @@ export async function fetchLeaveData(session: VtopSession): Promise<LeaveRequest
   });
 
   return leaves;
+}
+
+export async function fetchLeaveData(session: VtopSession): Promise<LeaveRequest[]> {
+  const html = await vtopPost(
+    '/vtop/hostels/student/leave/1',
+    new URLSearchParams({ verifyMenu: 'true', authorizedID: session.userId, _csrf: session.csrfToken, nocache: Date.now().toString() }),
+    session,
+  );
+  return parseLeaveHtml(html);
 }
