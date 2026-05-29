@@ -4,12 +4,13 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 
 const SECTIONS = [
-  { label: 'Exam Schedule', icon: 'clipboard-list', href: '/exam' },
-  { label: 'Academic Calendar', icon: 'calendar', href: '/calendar' },
-  { label: 'Hostel', icon: 'home-city', href: '/hostel' },
-  { label: 'LMS / Moodle', icon: 'book-open-variant', href: '/lms' },
-  { label: 'Vitol', icon: 'laptop', href: '/vitol' },
-  { label: 'Settings', icon: 'cog', href: '/settings' },
+  { label: 'Marks', icon: 'clipboard-text', href: '/(tabs)/marks' },
+  { label: 'Exam Schedule', icon: 'clipboard-list', href: '/(tabs)/exam' },
+  { label: 'Academic Calendar', icon: 'calendar', href: '/(tabs)/calendar' },
+  { label: 'Hostel', icon: 'home-city', href: '/(tabs)/hostel' },
+  { label: 'LMS / Moodle', icon: 'book-open-variant', href: '/(tabs)/lms' },
+  { label: 'Vitol', icon: 'laptop', href: '/(tabs)/vitol' },
+  { label: 'Settings', icon: 'cog', href: '/(tabs)/settings' },
 ] as const;
 
 export default function MoreScreen() {
