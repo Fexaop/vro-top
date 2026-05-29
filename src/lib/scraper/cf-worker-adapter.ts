@@ -7,6 +7,9 @@ import type { CourseGrade, SemesterResult } from '@/types/grades';
 import type { HostelInfo, LeaveRequest } from '@/types/hostel';
 import type { LmsAssignment } from '@/types/lms';
 import type { VitolAssignment } from '@/types/vitol';
+import { solveCaptcha } from './vtop/captcha';
+
+const MAX_CAPTCHA_RETRIES = 10;
 
 export class CfWorkerAdapter implements ScraperAdapter {
   constructor(private readonly baseUrl: string) {}
@@ -24,12 +27,48 @@ export class CfWorkerAdapter implements ScraperAdapter {
     return res.json() as Promise<T>;
   }
 
-  vtopLogin(creds: VtopCredentials): Promise<VtopSession> {
-    return this.post('/vtop/login', { credentials: creds });
+  private async postRaw(path: string, body: unknown): Promise<Response> {
+    return fetch(`${this.baseUrl}${path}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
   }
-  refreshSession(creds: VtopCredentials, old: VtopSession): Promise<VtopSession> {
-    return this.post('/vtop/refresh', { credentials: creds, session: old });
+
+  async vtopLogin(creds: VtopCredentials): Promise<VtopSession> {
+    for (let attempt = 0; attempt < MAX_CAPTCHA_RETRIES; attempt++) {
+      // Step 1: Worker fetches VTOP prelogin page — returns cookies + CSRF + captcha image
+      const prelogin = await this.post<{ cookies: string; csrfToken: string; captchaBase64: string; error?: string }>(
+        '/vtop/prelogin', {},
+      );
+      if (prelogin.error) throw new Error(prelogin.error);
+
+      // Step 2: Solve CAPTCHA on-device (never leaves the device)
+      const { solved } = await solveCaptcha(prelogin.captchaBase64);
+
+      // Step 3: Worker does the login POST with our solved CAPTCHA
+      const res = await this.postRaw('/vtop/login', {
+        credentials: creds,
+        captchaSolution: solved,
+        cookies: prelogin.cookies,
+        csrfToken: prelogin.csrfToken,
+      });
+
+      if (res.status === 422) continue; // wrong captcha — retry
+      if (!res.ok) {
+        const data = await res.json() as { error?: string };
+        throw new Error(data.error ?? `Worker error ${res.status}`);
+      }
+
+      return res.json() as Promise<VtopSession>;
+    }
+    throw new Error(`Login failed after ${MAX_CAPTCHA_RETRIES} attempts. VTOP may be using Google CAPTCHA.`);
   }
+
+  refreshSession(creds: VtopCredentials, _old: VtopSession): Promise<VtopSession> {
+    return this.vtopLogin(creds);
+  }
+
   fetchAttendance(session: VtopSession): Promise<AttendanceCourse[]> {
     return this.post('/vtop/attendance', { session });
   }
