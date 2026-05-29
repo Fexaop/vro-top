@@ -1,11 +1,12 @@
 import { useQuery } from '@tanstack/react-query';
-import { FlatList, StyleSheet, View } from 'react-native';
+import { FlatList, RefreshControl, StyleSheet, View } from 'react-native';
 import { ActivityIndicator, Banner, Button, Card, Chip, Text, useTheme } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { useAuthStore } from '@/store/auth-store';
 import { useScraper } from '@/hooks/use-scraper';
 import { useVtopSession } from '@/hooks/use-vtop-session';
+import { useGradesStore } from '@/store/grades-store';
 import type { CourseGrade } from '@/types/grades';
 
 function gradeColor(grade: string, colors: Record<string, string>): string {
@@ -35,7 +36,7 @@ function GradeCard({ item }: { item: CourseGrade }) {
               style={{ backgroundColor: gc + '20' }}
               textStyle={{ color: gc, fontWeight: 'bold' }}
             >
-              {item.grade || 'N/A'}
+              {item.grade || 'In Progress'}
             </Chip>
             <Text variant="labelSmall" style={{ color: colors.onSurfaceVariant }}>
               {item.credits} cr · GP {item.gradePoint?.toFixed(1) ?? 'N/A'}
@@ -61,20 +62,28 @@ export default function GradesScreen() {
   const { colors } = useTheme();
   const scraper = useScraper();
   const { ensureFreshSession } = useVtopSession();
-  const creds = useAuthStore((s) => s.vtopCreds);
   const session = useAuthStore((s) => s.vtopSession);
+  const setCurrentGrades = useGradesStore((s) => s.setCurrentGrades);
+  const cachedGrades = useGradesStore((s) => s.currentGrades);
+  const lastFetched = useGradesStore((s) => s.lastFetchedCurrent);
 
-  const { data, isLoading, error, refetch } = useQuery({
+  const hasCache = cachedGrades.length > 0;
+
+  const { isLoading, isError, error, refetch, isRefetching } = useQuery({
     queryKey: ['grades', 'current'],
     queryFn: async () => {
       const s = await ensureFreshSession();
-      return scraper.fetchCurrentGrades(s);
+      const grades = await scraper.fetchCurrentGrades(s);
+      setCurrentGrades(grades);
+      return grades;
     },
-    enabled: !!creds,
-    staleTime: 5 * 60 * 1000,
+    enabled: !hasCache,
+    staleTime: Infinity,
+    gcTime: Infinity,
   });
 
-  const cgpa = data?.length
+  const data = cachedGrades;
+  const cgpa = data.length
     ? (data.reduce((sum, g) => sum + (g.gradePoint ?? 0) * g.credits, 0) /
         Math.max(data.reduce((sum, g) => sum + (g.gradePoint != null ? g.credits : 0), 0), 1)).toFixed(2)
     : null;
@@ -83,13 +92,20 @@ export default function GradesScreen() {
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
-      {error && (
+      {isError && (
         <Banner visible actions={[{ label: 'Retry', onPress: () => refetch() }]}>
-          {String(error)}
+          {error instanceof Error ? error.message : String(error)}
         </Banner>
       )}
       <View style={styles.header}>
-        <Text variant="headlineMedium">Grades</Text>
+        <View>
+          <Text variant="headlineMedium">Grades</Text>
+          {lastFetched && (
+            <Text variant="labelSmall" style={{ color: colors.onSurfaceVariant }}>
+              Updated {new Date(lastFetched).toLocaleTimeString()}
+            </Text>
+          )}
+        </View>
         <View style={styles.row}>
           {cgpa && <Chip icon="school">{`CGPA ${cgpa}`}</Chip>}
           <Button mode="text" onPress={() => router.push('/grades/history')}>History</Button>
@@ -104,16 +120,20 @@ export default function GradesScreen() {
           View Component-wise Marks
         </Button>
       )}
-      {isLoading ? (
+      {isLoading && !hasCache ? (
         <View style={styles.center}><ActivityIndicator /></View>
       ) : (
         <FlatList
-          data={data ?? []}
+          data={data}
           keyExtractor={(i) => i.courseCode}
           renderItem={({ item }) => <GradeCard item={item} />}
           contentContainerStyle={styles.list}
-          onRefresh={refetch}
-          refreshing={isLoading}
+          refreshControl={
+            <RefreshControl refreshing={isRefetching} onRefresh={() => refetch()} colors={[colors.primary]} />
+          }
+          ListEmptyComponent={
+            <Text style={[styles.empty, { color: colors.onSurfaceVariant }]}>No grades data found.</Text>
+          }
         />
       )}
     </SafeAreaView>
@@ -124,7 +144,8 @@ const styles = StyleSheet.create({
   safe: { flex: 1 },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16 },
   row: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  list: { padding: 16, gap: 12 },
+  list: { padding: 16, gap: 12, paddingBottom: 32 },
   card: { marginBottom: 0 },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  empty: { textAlign: 'center', padding: 32 },
 });

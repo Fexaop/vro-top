@@ -1,11 +1,12 @@
 import { useQuery } from '@tanstack/react-query';
-import { SectionList, StyleSheet, View } from 'react-native';
+import { SectionList, StyleSheet, View, RefreshControl } from 'react-native';
 import { ActivityIndicator, Banner, Card, Chip, Divider, ProgressBar, Text, useTheme } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams } from 'expo-router';
 import { useAuthStore } from '@/store/auth-store';
 import { useScraper } from '@/hooks/use-scraper';
 import { useVtopSession } from '@/hooks/use-vtop-session';
+import { useGradesStore } from '@/store/grades-store';
 import type { CourseGrade } from '@/types/grades';
 
 function gradeColor(grade: string, colors: Record<string, string>): string {
@@ -30,10 +31,7 @@ function CourseCard({ course, isCurrent }: { course: CourseGrade; isCurrent: boo
           </View>
           <View style={{ alignItems: 'flex-end', gap: 4 }}>
             {course.grade ? (
-              <Chip
-                style={{ backgroundColor: gc + '20' }}
-                textStyle={{ color: gc, fontWeight: 'bold' }}
-              >
+              <Chip style={{ backgroundColor: gc + '20' }} textStyle={{ color: gc, fontWeight: 'bold' }}>
                 {course.grade}
               </Chip>
             ) : null}
@@ -87,58 +85,69 @@ export default function SemesterDetail() {
   const { colors } = useTheme();
   const scraper = useScraper();
   const { ensureFreshSession } = useVtopSession();
-  const creds = useAuthStore((s) => s.vtopCreds);
   const session = useAuthStore((s) => s.vtopSession);
 
-  const isCurrent = session?.semesterCode === semCode;
+  const cachedSemesters = useGradesStore((s) => s.semesters);
+  const cachedCurrentGrades = useGradesStore((s) => s.currentGrades);
+  const setCurrentGrades = useGradesStore((s) => s.setCurrentGrades);
+  const setSemesters = useGradesStore((s) => s.setSemesters);
 
-  const { data: historyData, isLoading: histLoading, error: histError, refetch: refetchHist } = useQuery({
+  const isCurrent = session?.semesterCode === semCode;
+  const hasHistoryCache = cachedSemesters.length > 0;
+  const hasCurrentCache = cachedCurrentGrades.length > 0;
+
+  const { isLoading: histLoading, error: histError, refetch: refetchHist, isRefetching: histRefetching } = useQuery({
     queryKey: ['grades', 'history'],
     queryFn: async () => {
       const s = await ensureFreshSession();
-      return scraper.fetchAllSemesters(s);
+      const sems = await scraper.fetchAllSemesters(s);
+      setSemesters(sems);
+      return sems;
     },
-    enabled: !!creds,
-    staleTime: 10 * 60 * 1000,
+    enabled: !hasHistoryCache,
+    staleTime: Infinity,
+    gcTime: Infinity,
   });
 
-  const { data: currentData, isLoading: currLoading, error: currError, refetch: refetchCurr } = useQuery({
+  const { isLoading: currLoading, error: currError, refetch: refetchCurr, isRefetching: currRefetching } = useQuery({
     queryKey: ['grades', 'current'],
     queryFn: async () => {
       const s = await ensureFreshSession();
-      return scraper.fetchCurrentGrades(s);
+      const grades = await scraper.fetchCurrentGrades(s);
+      setCurrentGrades(grades);
+      return grades;
     },
-    enabled: !!creds && isCurrent,
-    staleTime: 5 * 60 * 1000,
+    enabled: !hasCurrentCache && isCurrent,
+    staleTime: Infinity,
+    gcTime: Infinity,
   });
 
-  const semesterResult = historyData?.find((s) => s.semesterCode === semCode);
+  const semesterResult = cachedSemesters.find((s) => s.semesterCode === semCode);
   const isLoading = histLoading || (isCurrent && currLoading);
+  const isRefreshing = histRefetching || currRefetching;
   const error = histError ?? currError;
 
-  const coursesToShow: CourseGrade[] = isCurrent && currentData
-    ? currentData
+  const coursesToShow: CourseGrade[] = isCurrent && cachedCurrentGrades.length > 0
+    ? cachedCurrentGrades
     : semesterResult?.courses ?? [];
 
   const sgpa = semesterResult?.sgpa;
   const cgpa = semesterResult?.cgpa;
   const totalCredits = semesterResult?.totalCredits ?? 0;
 
-  const sections = [{ title: '', data: coursesToShow }];
-
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
       {error && (
         <Banner visible actions={[{ label: 'Retry', onPress: () => { void refetchHist(); void refetchCurr(); } }]}>
-          {String(error)}
+          {error instanceof Error ? error.message : String(error)}
         </Banner>
       )}
 
-      {isLoading ? (
+      {isLoading && coursesToShow.length === 0 ? (
         <View style={styles.center}><ActivityIndicator /></View>
       ) : (
         <SectionList
-          sections={sections}
+          sections={[{ title: '', data: coursesToShow }]}
           keyExtractor={(item) => item.courseCode}
           renderItem={({ item }) => <CourseCard course={item} isCurrent={isCurrent} />}
           renderSectionHeader={() => (
@@ -152,15 +161,11 @@ export default function SemesterDetail() {
             semesterResult ? (
               <View style={[styles.statsRow, { backgroundColor: colors.surfaceVariant, borderRadius: 12, padding: 16, margin: 16 }]}>
                 <View style={styles.stat}>
-                  <Text variant="headlineSmall" style={{ color: colors.primary }}>
-                    {sgpa?.toFixed(2) ?? 'N/A'}
-                  </Text>
+                  <Text variant="headlineSmall" style={{ color: colors.primary }}>{sgpa?.toFixed(2) ?? 'N/A'}</Text>
                   <Text variant="labelSmall" style={{ color: colors.onSurfaceVariant }}>SGPA</Text>
                 </View>
                 <View style={[styles.stat, { borderLeftWidth: 1, borderColor: colors.outline }]}>
-                  <Text variant="headlineSmall" style={{ color: colors.secondary }}>
-                    {cgpa?.toFixed(2) ?? 'N/A'}
-                  </Text>
+                  <Text variant="headlineSmall" style={{ color: colors.secondary }}>{cgpa?.toFixed(2) ?? 'N/A'}</Text>
                   <Text variant="labelSmall" style={{ color: colors.onSurfaceVariant }}>CGPA</Text>
                 </View>
                 <View style={[styles.stat, { borderLeftWidth: 1, borderColor: colors.outline }]}>
@@ -171,8 +176,13 @@ export default function SemesterDetail() {
             ) : null
           }
           contentContainerStyle={styles.list}
-          onRefresh={() => { void refetchHist(); void refetchCurr(); }}
-          refreshing={isLoading}
+          refreshControl={
+            <RefreshControl
+              refreshing={isRefreshing}
+              onRefresh={() => { void refetchHist(); void refetchCurr(); }}
+              colors={[colors.primary]}
+            />
+          }
         />
       )}
     </SafeAreaView>

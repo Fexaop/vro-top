@@ -79,6 +79,15 @@ export const useAuthStore = create<AuthState>((set) => ({
       secureStorage.remove(LMS_KEY),
       secureStorage.remove(VITOL_KEY),
     ]);
+    // Clear persisted data stores so no stale data shows after logout
+    const { useAttendanceStore } = await import('./attendance-store');
+    const { useGradesStore } = await import('./grades-store');
+    const { useLmsStore } = await import('./lms-store');
+    const { useVitolStore } = await import('./vitol-store');
+    useAttendanceStore.getState().clear();
+    useGradesStore.getState().clear();
+    useLmsStore.getState().clear();
+    useVitolStore.getState().clear();
     set({
       vtopCreds: null,
       vtopSession: null,

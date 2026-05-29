@@ -36,7 +36,9 @@ export default function VitolScreen() {
   const { vtopCreds, vitolCreds, setVitolCreds } = useAuthStore();
   const { setAssignments, assignments: cached } = useVitolStore();
 
-  const { data, isLoading, isError, error, refetch, isRefetching } = useQuery({
+  const hasCache = cached.length > 0;
+
+  const { isLoading, isError, error, refetch, isRefetching } = useQuery({
     queryKey: ['vitol-assignments'],
     queryFn: async () => {
       if (!vtopCreds) throw new Error('Not logged in');
@@ -49,11 +51,12 @@ export default function VitolScreen() {
       setAssignments(assignments);
       return assignments;
     },
-    initialData: cached.length > 0 ? cached : undefined,
-    staleTime: 10 * 60 * 1000,
+    enabled: !hasCache,
+    staleTime: Infinity,
+    gcTime: Infinity,
   });
 
-  const assignments = data ?? cached;
+  const assignments = cached;
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: theme.colors.background }]}>

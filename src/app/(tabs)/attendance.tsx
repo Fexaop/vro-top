@@ -15,8 +15,11 @@ export default function AttendanceScreen() {
   const { ensureFreshSession } = useVtopSession();
   const setCourses = useAttendanceStore((s) => s.setCourses);
   const cachedCourses = useAttendanceStore((s) => s.courses);
+  const lastFetched = useAttendanceStore((s) => s.lastFetched);
 
-  const { data, isLoading, isError, error, refetch, isRefetching } = useQuery({
+  const hasCache = cachedCourses.length > 0;
+
+  const { isLoading, isError, error, refetch, isRefetching } = useQuery({
     queryKey: ['attendance'],
     queryFn: async () => {
       const session = await ensureFreshSession();
@@ -24,15 +27,12 @@ export default function AttendanceScreen() {
       setCourses(courses);
       return courses;
     },
-    initialData: cachedCourses.length > 0 ? cachedCourses : undefined,
-    staleTime: 5 * 60 * 1000,
+    enabled: !hasCache,
+    staleTime: Infinity,
+    gcTime: Infinity,
   });
 
-  const courses = (data ?? cachedCourses).sort((a, b) => a.percentage - b.percentage);
-
-  function navigateToCourse(course: AttendanceCourse) {
-    router.push(`/attendance/${encodeURIComponent(course.courseCode)}`);
-  }
+  const courses = cachedCourses.slice().sort((a, b) => a.percentage - b.percentage);
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: theme.colors.background }]}>
@@ -46,7 +46,7 @@ export default function AttendanceScreen() {
         </Banner>
       )}
 
-      {isLoading && courses.length === 0 ? (
+      {isLoading && !hasCache ? (
         <View style={styles.center}>
           <ActivityIndicator size="large" />
           <Text variant="bodyMedium" style={{ marginTop: 12, color: theme.colors.onSurfaceVariant }}>
@@ -58,12 +58,17 @@ export default function AttendanceScreen() {
           data={courses}
           keyExtractor={(c) => c.courseCode}
           renderItem={({ item }) => (
-            <AttendanceCard course={item} onPress={() => navigateToCourse(item)} />
+            <AttendanceCard course={item} onPress={() => router.push(`/attendance/${encodeURIComponent(item.courseCode)}`)} />
           )}
           ListHeaderComponent={
-            <Text variant="headlineMedium" style={styles.title}>
-              Attendance
-            </Text>
+            <View style={styles.titleRow}>
+              <Text variant="headlineMedium">Attendance</Text>
+              {lastFetched && (
+                <Text variant="labelSmall" style={{ color: theme.colors.onSurfaceVariant }}>
+                  Updated {new Date(lastFetched).toLocaleTimeString()}
+                </Text>
+              )}
+            </View>
           }
           ListEmptyComponent={
             <Text style={[styles.empty, { color: theme.colors.onSurfaceVariant }]}>
@@ -74,7 +79,7 @@ export default function AttendanceScreen() {
           refreshControl={
             <RefreshControl
               refreshing={isRefetching}
-              onRefresh={refetch}
+              onRefresh={() => refetch()}
               colors={[theme.colors.primary]}
             />
           }
@@ -87,7 +92,7 @@ export default function AttendanceScreen() {
 const styles = StyleSheet.create({
   safe: { flex: 1 },
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  title: { padding: 16, paddingBottom: 8 },
+  titleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, paddingBottom: 8 },
   list: { paddingBottom: 24 },
   empty: { textAlign: 'center', padding: 32 },
 });

@@ -39,7 +39,9 @@ export default function LmsScreen() {
   const { vtopCreds, lmsCreds, setLmsCreds } = useAuthStore();
   const { setAssignments, assignments: cached } = useLmsStore();
 
-  const { data, isLoading, isError, error, refetch, isRefetching } = useQuery({
+  const hasCache = cached.length > 0;
+
+  const { isLoading, isError, error, refetch, isRefetching } = useQuery({
     queryKey: ['lms-assignments'],
     queryFn: async () => {
       if (!vtopCreds) throw new Error('Not logged in');
@@ -52,11 +54,12 @@ export default function LmsScreen() {
       setAssignments(assignments);
       return assignments;
     },
-    initialData: cached.length > 0 ? cached : undefined,
-    staleTime: 10 * 60 * 1000,
+    enabled: !hasCache,
+    staleTime: Infinity,
+    gcTime: Infinity,
   });
 
-  const assignments = data ?? cached;
+  const assignments = cached;
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: theme.colors.background }]}>

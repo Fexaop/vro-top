@@ -1,12 +1,12 @@
 import { useQuery } from '@tanstack/react-query';
-import { Dimensions, FlatList, StyleSheet, View } from 'react-native';
+import { Dimensions, FlatList, RefreshControl, StyleSheet, View } from 'react-native';
 import { ActivityIndicator, Banner, Card, Chip, Divider, Text, useTheme } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
 import { LineChart } from 'react-native-gifted-charts';
-import { useAuthStore } from '@/store/auth-store';
 import { useScraper } from '@/hooks/use-scraper';
 import { useVtopSession } from '@/hooks/use-vtop-session';
+import { useGradesStore } from '@/store/grades-store';
 import type { SemesterResult } from '@/types/grades';
 
 const SCREEN_W = Dimensions.get('window').width;
@@ -89,42 +89,61 @@ export default function GradesHistory() {
   const { colors } = useTheme();
   const scraper = useScraper();
   const { ensureFreshSession } = useVtopSession();
-  const creds = useAuthStore((s) => s.vtopCreds);
+  const setSemesters = useGradesStore((s) => s.setSemesters);
+  const cachedSemesters = useGradesStore((s) => s.semesters);
+  const lastFetched = useGradesStore((s) => s.lastFetchedHistory);
 
-  const { data, isLoading, error, refetch } = useQuery({
+  const hasCache = cachedSemesters.length > 0;
+
+  const { isLoading, isError, error, refetch, isRefetching } = useQuery({
     queryKey: ['grades', 'history'],
     queryFn: async () => {
       const session = await ensureFreshSession();
-      return scraper.fetchAllSemesters(session);
+      const sems = await scraper.fetchAllSemesters(session);
+      setSemesters(sems);
+      return sems;
     },
-    enabled: !!creds,
-    staleTime: 10 * 60 * 1000,
+    enabled: !hasCache,
+    staleTime: Infinity,
+    gcTime: Infinity,
   });
 
-  const latestCgpa = data?.find((s) => s.cgpa != null)?.cgpa;
+  const data = cachedSemesters;
+  const latestCgpa = data.find((s) => s.cgpa != null)?.cgpa;
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
-      {error && (
+      {isError && (
         <Banner visible actions={[{ label: 'Retry', onPress: () => refetch() }]}>
-          {String(error)}
+          {error instanceof Error ? error.message : String(error)}
         </Banner>
       )}
       <View style={styles.header}>
-        <Text variant="headlineMedium">Grade History</Text>
+        <View>
+          <Text variant="headlineMedium">Grade History</Text>
+          {lastFetched && (
+            <Text variant="labelSmall" style={{ color: colors.onSurfaceVariant }}>
+              Updated {new Date(lastFetched).toLocaleTimeString()}
+            </Text>
+          )}
+        </View>
         {latestCgpa != null && <Chip icon="school">{`CGPA ${latestCgpa.toFixed(2)}`}</Chip>}
       </View>
-      {isLoading ? (
+      {isLoading && !hasCache ? (
         <View style={styles.center}><ActivityIndicator /></View>
       ) : (
         <FlatList
-          data={data ?? []}
+          data={data}
           keyExtractor={(i) => i.semesterCode}
-          ListHeaderComponent={data && data.length > 1 ? <CgpaTrendChart semesters={data} /> : null}
+          ListHeaderComponent={data.length > 1 ? <CgpaTrendChart semesters={data} /> : null}
           renderItem={({ item }) => <SemCard item={item} />}
           contentContainerStyle={styles.list}
-          onRefresh={refetch}
-          refreshing={isLoading}
+          refreshControl={
+            <RefreshControl refreshing={isRefetching} onRefresh={() => refetch()} colors={[colors.primary]} />
+          }
+          ListEmptyComponent={
+            <Text style={[styles.empty, { color: colors.onSurfaceVariant }]}>No grade history found.</Text>
+          }
         />
       )}
     </SafeAreaView>
@@ -135,8 +154,9 @@ const styles = StyleSheet.create({
   safe: { flex: 1 },
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16 },
   row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
-  list: { padding: 16, gap: 12 },
+  list: { padding: 16, gap: 12, paddingBottom: 32 },
   card: { marginBottom: 0 },
   chartCard: { marginBottom: 12 },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  empty: { textAlign: 'center', padding: 32 },
 });
