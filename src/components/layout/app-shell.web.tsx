@@ -35,7 +35,7 @@ export function AppShell() {
               key={item.href}
               label={item.label}
               icon={item.icon}
-              active={pathname.startsWith(item.href)}
+              active={item.href === '/(tabs)' ? (pathname === '/' || pathname === '/(tabs)') : pathname.startsWith(item.href)}
               onPress={() => router.push(item.href as never)}
             />
           ))}
