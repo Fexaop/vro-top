@@ -67,8 +67,8 @@ function SemCard({ item }: { item: SemesterResult }) {
           {`Credits: ${item.totalCredits}  CGPA: ${item.cgpa?.toFixed(2) ?? 'N/A'}`}
         </Text>
         <Divider style={{ marginVertical: 8 }} />
-        {item.courses.slice(0, 3).map((c) => (
-          <View key={c.courseCode} style={[styles.row, { marginBottom: 4 }]}>
+        {item.courses.slice(0, 3).map((c, ci) => (
+          <View key={`${c.courseCode}-${ci}`} style={[styles.row, { marginBottom: 4 }]}>
             <Text variant="bodySmall" style={{ flex: 1, color: colors.onSurfaceVariant }} numberOfLines={1}>
               {c.courseTitle}
             </Text>

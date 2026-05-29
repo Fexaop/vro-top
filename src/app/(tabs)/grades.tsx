@@ -135,7 +135,7 @@ export default function GradesScreen() {
       ) : (
         <FlatList
           data={data}
-          keyExtractor={(i) => i.courseCode}
+          keyExtractor={(i, idx) => `${i.courseCode}-${idx}`}
           renderItem={({ item }) => <GradeCard item={item} />}
           contentContainerStyle={styles.list}
           refreshControl={

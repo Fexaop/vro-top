@@ -98,9 +98,9 @@ function MarksCard({ item }: { item: CourseGrade }) {
         {hasComponents ? (
           <>
             <Divider style={{ marginVertical: 10 }} />
-            {item.components.map((comp) => (
+            {item.components.map((comp, i) => (
               <ComponentRow
-                key={comp.componentName}
+                key={`${comp.componentName}-${i}`}
                 comp={comp}
                 colors={colors as unknown as Record<string, string>}
               />
@@ -180,7 +180,7 @@ export default function MarksScreen() {
       ) : (
         <FlatList
           data={data}
-          keyExtractor={(item) => item.courseCode}
+          keyExtractor={(item, index) => `${item.courseCode}-${index}`}
           renderItem={({ item }) => <MarksCard item={item} />}
           contentContainerStyle={styles.list}
           refreshControl={
