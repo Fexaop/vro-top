@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { FlatList, SectionList, StyleSheet, View } from 'react-native';
+import { SectionList, StyleSheet, View } from 'react-native';
 import { ActivityIndicator, Banner, Card, Chip, Text, useTheme } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuthStore } from '@/store/auth-store';
@@ -21,7 +21,7 @@ function ExamCard({ item }: { item: ExamSlot }) {
         </View>
         <View style={[styles.row, { marginTop: 8 }]}>
           <Text variant="bodySmall" style={{ color: colors.onSurfaceVariant }}>
-            {new Date(item.date).toLocaleDateString('en-IN', { day: '2-digit', month: 'short', year: 'numeric' })}
+            {item.date}
           </Text>
           <Text variant="bodySmall" style={{ color: colors.onSurfaceVariant }}>{item.examTime}</Text>
         </View>
@@ -62,7 +62,7 @@ export default function ExamScreen() {
           acc[key].push(slot);
           return acc;
         }, {}),
-      ).map(([title, slotData]) => ({ title, data: slotData }))
+      ).map(([title, slotData]) => ({ key: title, title, data: slotData }))
     : [];
 
   return (

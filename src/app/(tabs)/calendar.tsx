@@ -16,7 +16,7 @@ function groupByMonth(events: CalendarEvent[]): Section[] {
     arr.push(e);
     map.set(key, arr);
   }
-  return [...map.entries()].map(([title, data]) => ({ title, data }));
+  return [...map.entries()].map(([title, data]) => ({ key: title, title, data }));
 }
 
 const TYPE_COLORS: Record<string, string> = {
@@ -57,9 +57,11 @@ export default function CalendarScreen() {
           sections={sections}
           keyExtractor={(item, i) => item.date + i}
           renderSectionHeader={({ section: { title } }) => (
-            <Text variant="titleMedium" style={[styles.sectionHeader, { backgroundColor: theme.colors.surfaceVariant, color: theme.colors.onSurfaceVariant }]}>
-              {title}
-            </Text>
+            <View style={[styles.sectionHeader, { backgroundColor: theme.colors.surfaceVariant }]}>
+              <Text variant="titleMedium" style={{ color: theme.colors.onSurfaceVariant }}>
+                {title}
+              </Text>
+            </View>
           )}
           renderItem={({ item }) => (
             <View style={[styles.eventRow, { borderBottomColor: theme.colors.outlineVariant }]}>
