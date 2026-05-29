@@ -7,6 +7,7 @@ const NAV_ITEMS = [
   { href: '/(tabs)', label: 'Dashboard', icon: 'view-dashboard' },
   { href: '/(tabs)/attendance', label: 'Attendance', icon: 'calendar-check' },
   { href: '/(tabs)/grades', label: 'Grades', icon: 'school' },
+  { href: '/(tabs)/marks', label: 'Marks', icon: 'clipboard-text' },
   { href: '/(tabs)/exam', label: 'Exam Schedule', icon: 'clipboard-list' },
   { href: '/(tabs)/calendar', label: 'Calendar', icon: 'calendar' },
   { href: '/(tabs)/hostel', label: 'Hostel', icon: 'home-city' },
