@@ -1,4 +1,4 @@
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, View } from 'react-native';
 import { Button, Card, Chip, Divider, Text, useTheme } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, router } from 'expo-router';
@@ -18,8 +18,8 @@ export default function CourseDetail() {
 
   if (!course || !pred) {
     return (
-      <SafeAreaView style={[styles.safe, { backgroundColor: theme.colors.background }]}>
-        <View style={styles.center}>
+      <SafeAreaView className="flex-1" style={{ backgroundColor: theme.colors.background }}>
+        <View className="flex-1 items-center justify-center p-6">
           <Text variant="bodyLarge">Course not found.</Text>
           <Button onPress={() => router.back()} style={{ marginTop: 16 }}>
             Go Back
@@ -33,18 +33,18 @@ export default function CourseDetail() {
   const statColor = isLow ? theme.colors.error : theme.colors.tertiary;
 
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: theme.colors.background }]}>
-      <ScrollView contentContainerStyle={styles.container}>
+    <SafeAreaView className="flex-1" style={{ backgroundColor: theme.colors.background }}>
+      <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 32 }}>
         <Button
           icon="arrow-left"
           onPress={() => router.back()}
-          style={styles.back}
+          style={{ alignSelf: 'flex-start', marginBottom: 12, marginLeft: -8 }}
           compact
         >
           Back
         </Button>
 
-        <Text variant="headlineMedium" style={styles.title}>
+        <Text variant="headlineMedium" style={{ marginBottom: 4 }}>
           {course.courseTitle}
         </Text>
         <Text variant="bodyMedium" style={{ color: theme.colors.onSurfaceVariant }}>
@@ -56,11 +56,11 @@ export default function CourseDetail() {
           </Text>
         ) : null}
 
-        <Divider style={styles.divider} />
+        <Divider style={{ marginVertical: 16 }} />
 
         {/* Stats row */}
-        <View style={styles.statsRow}>
-          <View style={styles.statBox}>
+        <View className="flex-row justify-around">
+          <View className="items-center">
             <Text variant="displaySmall" style={{ color: statColor }}>
               {course.percentage}%
             </Text>
@@ -68,19 +68,19 @@ export default function CourseDetail() {
               Attendance
             </Text>
           </View>
-          <View style={styles.statBox}>
+          <View className="items-center">
             <Text variant="headlineMedium">{course.attended}</Text>
             <Text variant="labelSmall" style={{ color: theme.colors.onSurfaceVariant }}>
               Present
             </Text>
           </View>
-          <View style={styles.statBox}>
+          <View className="items-center">
             <Text variant="headlineMedium">{course.totalClasses - course.attended}</Text>
             <Text variant="labelSmall" style={{ color: theme.colors.onSurfaceVariant }}>
               Absent
             </Text>
           </View>
-          <View style={styles.statBox}>
+          <View className="items-center">
             <Text variant="headlineMedium">{course.totalClasses}</Text>
             <Text variant="labelSmall" style={{ color: theme.colors.onSurfaceVariant }}>
               Total
@@ -88,10 +88,10 @@ export default function CourseDetail() {
           </View>
         </View>
 
-        <Divider style={styles.divider} />
+        <Divider style={{ marginVertical: 16 }} />
 
         {/* Predictor */}
-        <Card style={styles.card}>
+        <Card style={{ marginBottom: 16 }}>
           <Card.Title title="Attendance Predictor" subtitle="Target: 75%" />
           <Card.Content>
             {pred.canBunkCount > 0 ? (
@@ -112,13 +112,13 @@ export default function CourseDetail() {
             <Text variant="labelMedium" style={{ color: theme.colors.onSurfaceVariant, marginBottom: 8 }}>
               Simulate attending extra classes:
             </Text>
-            <View style={styles.chipRow}>
+            <View className="flex-row flex-wrap gap-2">
               {[0, 1, 2, 3, 5, 10].map((n) => (
                 <Chip
                   key={n}
                   selected={extra === n}
                   onPress={() => setExtra(n)}
-                  style={styles.chip}
+                  style={{ marginBottom: 4 }}
                 >
                   +{n}
                 </Chip>
@@ -135,17 +135,3 @@ export default function CourseDetail() {
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  safe: { flex: 1 },
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
-  container: { padding: 16, paddingBottom: 32 },
-  back: { alignSelf: 'flex-start', marginBottom: 12, marginLeft: -8 },
-  title: { marginBottom: 4 },
-  divider: { marginVertical: 16 },
-  statsRow: { flexDirection: 'row', justifyContent: 'space-around' },
-  statBox: { alignItems: 'center' },
-  card: { marginBottom: 16 },
-  chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
-  chip: { marginBottom: 4 },
-});

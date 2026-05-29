@@ -1,3 +1,4 @@
+import '../../global.css';
 import { useEffect } from 'react';
 import { LogBox, Platform } from 'react-native';
 

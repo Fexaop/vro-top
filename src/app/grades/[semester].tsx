@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { SectionList, StyleSheet, View, RefreshControl } from 'react-native';
+import { SectionList, View, RefreshControl } from 'react-native';
 import { ActivityIndicator, Banner, Card, Chip, Divider, ProgressBar, Text, useTheme } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams } from 'expo-router';
@@ -22,9 +22,9 @@ function CourseCard({ course, isCurrent }: { course: CourseGrade; isCurrent: boo
   const gc = gradeColor(course.grade, colors as unknown as Record<string, string>);
 
   return (
-    <Card mode="outlined" style={styles.card}>
+    <Card mode="outlined" style={{ marginHorizontal: 16, marginBottom: 12 }}>
       <Card.Content>
-        <View style={styles.row}>
+        <View className="flex-row items-center justify-between gap-2">
           <View style={{ flex: 1 }}>
             <Text variant="titleSmall" numberOfLines={2}>{course.courseTitle}</Text>
             <Text variant="bodySmall" style={{ color: colors.onSurfaceVariant }}>{course.courseCode}</Text>
@@ -48,7 +48,7 @@ function CourseCard({ course, isCurrent }: { course: CourseGrade; isCurrent: boo
               const pct = comp.markScored != null ? comp.markScored / comp.maxMark : null;
               return (
                 <View key={comp.componentName} style={{ marginBottom: 8 }}>
-                  <View style={styles.row}>
+                  <View className="flex-row items-center justify-between gap-2">
                     <Text variant="labelSmall" style={{ color: colors.onSurfaceVariant }}>
                       {comp.componentName}
                     </Text>
@@ -67,7 +67,7 @@ function CourseCard({ course, isCurrent }: { course: CourseGrade; isCurrent: boo
               );
             })}
             {course.totalMarks != null && (
-              <View style={[styles.row, { marginTop: 4 }]}>
+              <View className="flex-row items-center justify-between gap-2" style={{ marginTop: 4 }}>
                 <Text variant="labelSmall" style={{ color: colors.onSurfaceVariant }}>Total</Text>
                 <Text variant="labelMedium" style={{ fontWeight: 'bold' }}>{course.totalMarks}</Text>
               </View>
@@ -136,7 +136,7 @@ export default function SemesterDetail() {
   const totalCredits = semesterResult?.totalCredits ?? 0;
 
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
+    <SafeAreaView className="flex-1" style={{ backgroundColor: colors.background }}>
       {error && (
         <Banner visible actions={[{ label: 'Retry', onPress: () => { void refetchHist(); void refetchCurr(); } }]}>
           {error instanceof Error ? error.message : String(error)}
@@ -144,14 +144,14 @@ export default function SemesterDetail() {
       )}
 
       {isLoading && coursesToShow.length === 0 ? (
-        <View style={styles.center}><ActivityIndicator /></View>
+        <View className="flex-1 justify-center items-center"><ActivityIndicator /></View>
       ) : (
         <SectionList
           sections={[{ title: '', data: coursesToShow }]}
           keyExtractor={(item) => item.courseCode}
           renderItem={({ item }) => <CourseCard course={item} isCurrent={isCurrent} />}
           renderSectionHeader={() => (
-            <View style={[styles.summaryRow, { backgroundColor: colors.background }]}>
+            <View style={{ paddingHorizontal: 16, paddingVertical: 8, backgroundColor: colors.background }}>
               <Text variant="headlineSmall" style={{ flex: 1 }} numberOfLines={1}>
                 {semesterResult?.semesterName ?? semCode}
               </Text>
@@ -159,23 +159,23 @@ export default function SemesterDetail() {
           )}
           ListHeaderComponent={
             semesterResult ? (
-              <View style={[styles.statsRow, { backgroundColor: colors.surfaceVariant, borderRadius: 12, padding: 16, margin: 16 }]}>
-                <View style={styles.stat}>
+              <View className="flex-row" style={{ backgroundColor: colors.surfaceVariant, borderRadius: 12, padding: 16, margin: 16 }}>
+                <View className="flex-1 items-center" style={{ paddingVertical: 4 }}>
                   <Text variant="headlineSmall" style={{ color: colors.primary }}>{sgpa?.toFixed(2) ?? 'N/A'}</Text>
                   <Text variant="labelSmall" style={{ color: colors.onSurfaceVariant }}>SGPA</Text>
                 </View>
-                <View style={[styles.stat, { borderLeftWidth: 1, borderColor: colors.outline }]}>
+                <View className="flex-1 items-center" style={{ paddingVertical: 4, borderLeftWidth: 1, borderColor: colors.outline }}>
                   <Text variant="headlineSmall" style={{ color: colors.secondary }}>{cgpa?.toFixed(2) ?? 'N/A'}</Text>
                   <Text variant="labelSmall" style={{ color: colors.onSurfaceVariant }}>CGPA</Text>
                 </View>
-                <View style={[styles.stat, { borderLeftWidth: 1, borderColor: colors.outline }]}>
+                <View className="flex-1 items-center" style={{ paddingVertical: 4, borderLeftWidth: 1, borderColor: colors.outline }}>
                   <Text variant="headlineSmall">{totalCredits}</Text>
                   <Text variant="labelSmall" style={{ color: colors.onSurfaceVariant }}>Credits</Text>
                 </View>
               </View>
             ) : null
           }
-          contentContainerStyle={styles.list}
+          contentContainerStyle={{ paddingBottom: 32 }}
           refreshControl={
             <RefreshControl
               refreshing={isRefreshing}
@@ -188,14 +188,3 @@ export default function SemesterDetail() {
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  safe: { flex: 1 },
-  row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
-  list: { paddingBottom: 32 },
-  card: { marginHorizontal: 16, marginBottom: 12 },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  summaryRow: { paddingHorizontal: 16, paddingVertical: 8 },
-  statsRow: { flexDirection: 'row' },
-  stat: { flex: 1, alignItems: 'center', paddingVertical: 4 },
-});

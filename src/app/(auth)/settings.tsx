@@ -1,4 +1,4 @@
-import { ScrollView, StyleSheet } from 'react-native';
+import { ScrollView } from 'react-native';
 import { Divider, List, Text, TextInput, useTheme } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSettingsStore, SEMESTER_LIST } from '@/store/settings-store';
@@ -19,7 +19,7 @@ export default function PreAuthSettingsScreen() {
   ];
 
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: theme.colors.background }]}>
+    <SafeAreaView className="flex-1" style={{ backgroundColor: theme.colors.background }}>
       <ScrollView>
         <List.Section>
           <List.Subheader>Scraper Mode</List.Subheader>
@@ -42,7 +42,7 @@ export default function PreAuthSettingsScreen() {
               value={workerUrl}
               onChangeText={(v) => void setWorkerUrl(v.trim().replace(/\/$/, ''))}
               placeholder="https://unicc-worker.your-name.workers.dev"
-              style={styles.input}
+              style={{ marginHorizontal: 16, marginBottom: 8 }}
               mode="outlined"
               autoCapitalize="none"
               autoCorrect={false}
@@ -54,7 +54,7 @@ export default function PreAuthSettingsScreen() {
 
         <List.Section>
           <List.Subheader>Semester</List.Subheader>
-          <Text variant="bodySmall" style={[styles.hint, { color: theme.colors.onSurfaceVariant }]}>
+          <Text variant="bodySmall" style={{ marginHorizontal: 16, marginBottom: 4, color: theme.colors.onSurfaceVariant }}>
             Select the semester whose data you want to fetch.
           </Text>
           {SEMESTER_LIST.map((sem) => (
@@ -75,9 +75,3 @@ export default function PreAuthSettingsScreen() {
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  safe: { flex: 1 },
-  input: { marginHorizontal: 16, marginBottom: 8 },
-  hint: { marginHorizontal: 16, marginBottom: 4 },
-});

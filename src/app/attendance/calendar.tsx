@@ -1,4 +1,4 @@
-import { ScrollView, StyleSheet, View, RefreshControl } from 'react-native';
+import { ScrollView, View, RefreshControl } from 'react-native';
 import { ActivityIndicator, Banner, Card, Chip, Text, useTheme } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams } from 'expo-router';
@@ -30,38 +30,38 @@ export default function AttendanceCalendarScreen() {
   });
 
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: theme.colors.background }]}>
+    <SafeAreaView className="flex-1" style={{ backgroundColor: theme.colors.background }}>
       {isError && (
         <Banner visible icon="alert-circle" actions={[{ label: 'Retry', onPress: () => refetch() }]}>
           {error instanceof Error ? error.message : 'Failed to load attendance details.'}
         </Banner>
       )}
       <ScrollView
-        contentContainerStyle={styles.container}
+        contentContainerStyle={{ padding: 16, paddingBottom: 32 }}
         refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} colors={[theme.colors.primary]} />}
       >
-        <Text variant="headlineMedium" style={styles.title}>
+        <Text variant="headlineMedium" style={{ marginBottom: 4 }}>
           Attendance Log
         </Text>
-        <Text variant="bodySmall" style={[styles.subtitle, { color: theme.colors.onSurfaceVariant }]}>
+        <Text variant="bodySmall" style={{ marginBottom: 16, color: theme.colors.onSurfaceVariant }}>
           {decodeURIComponent(courseCode ?? '')}
         </Text>
 
         {isLoading ? (
-          <View style={styles.center}><ActivityIndicator size="large" /></View>
+          <View className="flex-1 items-center justify-center" style={{ paddingTop: 48 }}><ActivityIndicator size="large" /></View>
         ) : (data ?? []).length === 0 ? (
-          <Text style={[styles.empty, { color: theme.colors.onSurfaceVariant }]}>No attendance records found.</Text>
+          <Text className="text-center p-8" style={{ color: theme.colors.onSurfaceVariant }}>No attendance records found.</Text>
         ) : (
           (data ?? []).map((day) => (
-            <Card key={day.date} style={styles.card} mode="outlined">
+            <Card key={day.date} style={{ marginBottom: 12 }} mode="outlined">
               <Card.Title title={day.date} titleVariant="titleSmall" />
-              <Card.Content style={styles.periods}>
+              <Card.Content style={{ gap: 8 }}>
                 {day.periods.map((p, i) => (
-                  <View key={i} style={styles.periodRow}>
+                  <View key={i} className="flex-row items-center">
                     <Text variant="bodySmall" style={{ flex: 1, color: theme.colors.onSurface }}>{p.slot}</Text>
                     <Chip
                       compact
-                      style={[styles.chip, { backgroundColor: (STATUS_COLOR[p.status] ?? '#777') + '22' }]}
+                      style={{ height: 22, backgroundColor: (STATUS_COLOR[p.status] ?? '#777') + '22' }}
                       textStyle={{ color: STATUS_COLOR[p.status] ?? '#777', fontSize: 11 }}
                     >
                       {p.status}
@@ -76,16 +76,3 @@ export default function AttendanceCalendarScreen() {
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  safe: { flex: 1 },
-  container: { padding: 16, paddingBottom: 32 },
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center', paddingTop: 48 },
-  title: { marginBottom: 4 },
-  subtitle: { marginBottom: 16 },
-  empty: { textAlign: 'center', padding: 32 },
-  card: { marginBottom: 12 },
-  periods: { gap: 8 },
-  periodRow: { flexDirection: 'row', alignItems: 'center' },
-  chip: { height: 22 },
-});

@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { FlatList, RefreshControl, StyleSheet, View } from 'react-native';
+import { FlatList, RefreshControl, View } from 'react-native';
 import {
   ActivityIndicator,
   Banner,
@@ -42,8 +42,8 @@ function ComponentRow({ comp, colors }: { comp: GradeComponent; colors: Record<s
     : `— / ${comp.maxMark}`;
 
   return (
-    <View style={styles.compRow}>
-      <View style={styles.compHeader}>
+    <View className="mb-2">
+      <View className="flex-row items-center justify-between gap-2">
         <Text variant="labelSmall" style={{ color: colors.onSurfaceVariant, flex: 1 }}>
           {comp.componentName}
         </Text>
@@ -55,7 +55,7 @@ function ComponentRow({ comp, colors }: { comp: GradeComponent; colors: Record<s
         <ProgressBar
           progress={pct}
           color={barColor}
-          style={styles.progressBar}
+          style={{ height: 4, borderRadius: 2, marginTop: 4 }}
         />
       ) : null}
     </View>
@@ -70,9 +70,9 @@ function MarksCard({ item }: { item: CourseGrade }) {
   const gpLabel = item.gradePoint != null && item.gradePoint > 0 ? `GP ${item.gradePoint.toFixed(1)}` : null;
 
   return (
-    <Card style={styles.card} mode="outlined">
+    <Card style={{ marginBottom: 0 }} mode="outlined">
       <Card.Content>
-        <View style={styles.row}>
+        <View className="flex-row items-center justify-between gap-2">
           <View style={{ flex: 1 }}>
             <Text variant="titleSmall" numberOfLines={2}>{item.courseTitle}</Text>
             <Text variant="bodySmall" style={{ color: colors.onSurfaceVariant }}>
@@ -107,7 +107,7 @@ function MarksCard({ item }: { item: CourseGrade }) {
               />
             ))}
             {item.totalMarks != null ? (
-              <View style={[styles.row, { marginTop: 6 }]}>
+              <View className="flex-row items-center justify-between gap-2" style={{ marginTop: 6 }}>
                 <Text variant="labelSmall" style={{ color: colors.onSurfaceVariant }}>
                   Total
                 </Text>
@@ -148,14 +148,14 @@ export default function MarksScreen() {
   const lastUpdatedStr = lastFetched !== null ? new Date(lastFetched).toLocaleTimeString() : null;
 
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
+    <SafeAreaView className="flex-1" style={{ backgroundColor: colors.background }}>
       {isError ? (
         <Banner visible actions={[{ label: 'Retry', onPress: () => void refetch() }]}>
           {error instanceof Error ? error.message : String(error)}
         </Banner>
       ) : null}
 
-      <View style={styles.header}>
+      <View className="flex-row items-center justify-between p-4">
         <View style={{ flex: 1 }}>
           <Text variant="headlineMedium">Marks</Text>
           {lastUpdatedStr !== null ? (
@@ -173,7 +173,7 @@ export default function MarksScreen() {
       </View>
 
       {isLoading && !hasData ? (
-        <View style={styles.center}>
+        <View className="flex-1 justify-center items-center">
           <ActivityIndicator />
         </View>
       ) : (
@@ -181,7 +181,7 @@ export default function MarksScreen() {
           data={displayData}
           keyExtractor={(item, index) => `${item.courseCode}-${index}`}
           renderItem={({ item }) => <MarksCard item={item} />}
-          contentContainerStyle={styles.list}
+          contentContainerStyle={{ padding: 16, gap: 12, paddingBottom: 32 }}
           refreshControl={
             <RefreshControl
               refreshing={isRefetching}
@@ -190,7 +190,7 @@ export default function MarksScreen() {
             />
           }
           ListEmptyComponent={
-            <Text style={[styles.empty, { color: colors.onSurfaceVariant }]}>
+            <Text className="text-center p-8" style={{ color: colors.onSurfaceVariant }}>
               No marks data available yet. Marks are published after each assessment.
             </Text>
           }
@@ -199,16 +199,3 @@ export default function MarksScreen() {
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  safe: { flex: 1 },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16 },
-  row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
-  list: { padding: 16, gap: 12, paddingBottom: 32 },
-  card: { marginBottom: 0 },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  empty: { textAlign: 'center', padding: 32 },
-  compRow: { marginBottom: 8 },
-  compHeader: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
-  progressBar: { height: 4, borderRadius: 2, marginTop: 4 },
-});

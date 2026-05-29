@@ -1,4 +1,4 @@
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, View } from 'react-native';
 import { Card, Chip, Divider, Text, useTheme } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -20,21 +20,21 @@ export default function MessScreen() {
   const today = DAYS[new Date().getDay() === 0 ? 6 : new Date().getDay() - 1];
 
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
-      <ScrollView contentContainerStyle={styles.content}>
-        <Text variant="headlineMedium" style={styles.title}>Mess Menu</Text>
+    <SafeAreaView className="flex-1" style={{ backgroundColor: colors.background }}>
+      <ScrollView contentContainerStyle={{ padding: 16 }}>
+        <Text variant="headlineMedium" style={{ marginBottom: 12 }}>Mess Menu</Text>
         <Chip icon="calendar-today" style={{ alignSelf: 'flex-start', marginBottom: 16 }}>Today: {today}</Chip>
 
         {DAYS.map((day) => (
-          <Card key={day} mode={day === today ? 'elevated' : 'outlined'} style={styles.card}>
+          <Card key={day} mode={day === today ? 'elevated' : 'outlined'} style={{ marginBottom: 12 }}>
             <Card.Content>
-              <View style={styles.row}>
+              <View className="flex-row items-center justify-between gap-2">
                 <Text variant="titleMedium">{day}</Text>
                 {day === today && <Chip compact>Today</Chip>}
               </View>
               <Divider style={{ marginVertical: 8 }} />
               {MEALS.map((meal) => (
-                <View key={meal} style={[styles.row, { marginBottom: 4 }]}>
+                <View key={meal} className="flex-row items-center justify-between gap-2" style={{ marginBottom: 4 }}>
                   <Text variant="labelMedium" style={{ color: colors.onSurfaceVariant, width: 80 }}>{meal}</Text>
                   <Text variant="bodySmall" style={{ flex: 1, color: colors.onSurface }}>{MENU[day][meal]}</Text>
                 </View>
@@ -46,11 +46,3 @@ export default function MessScreen() {
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  safe: { flex: 1 },
-  content: { padding: 16 },
-  title: { marginBottom: 12 },
-  card: { marginBottom: 12 },
-  row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
-});

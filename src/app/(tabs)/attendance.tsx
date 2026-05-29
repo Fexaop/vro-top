@@ -1,4 +1,4 @@
-import { FlatList, RefreshControl, StyleSheet, View } from 'react-native';
+import { FlatList, RefreshControl, View } from 'react-native';
 import { ActivityIndicator, Banner, Text, useTheme } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
@@ -34,7 +34,7 @@ export default function AttendanceScreen() {
   const hasData = courses.length > 0;
 
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: theme.colors.background }]}>
+    <SafeAreaView className="flex-1" style={{ backgroundColor: theme.colors.background }}>
       {isError && (
         <Banner
           visible
@@ -46,7 +46,7 @@ export default function AttendanceScreen() {
       )}
 
       {isLoading && !hasData ? (
-        <View style={styles.center}>
+        <View className="flex-1 items-center justify-center">
           <ActivityIndicator size="large" />
           <Text variant="bodyMedium" style={{ marginTop: 12, color: theme.colors.onSurfaceVariant }}>
             Loading attendance…
@@ -60,7 +60,7 @@ export default function AttendanceScreen() {
             <AttendanceCard course={item} onPress={() => router.push(`/attendance/${encodeURIComponent(item.courseCode)}`)} />
           )}
           ListHeaderComponent={
-            <View style={styles.titleRow}>
+            <View className="flex-row items-center justify-between p-4 pb-2">
               <Text variant="headlineMedium">Attendance</Text>
               {lastFetched !== null ? (
                 <Text variant="labelSmall" style={{ color: theme.colors.onSurfaceVariant }}>
@@ -70,11 +70,11 @@ export default function AttendanceScreen() {
             </View>
           }
           ListEmptyComponent={
-            <Text style={[styles.empty, { color: theme.colors.onSurfaceVariant }]}>
+            <Text className="text-center p-8" style={{ color: theme.colors.onSurfaceVariant }}>
               No attendance data found.
             </Text>
           }
-          contentContainerStyle={styles.list}
+          contentContainerStyle={{ paddingBottom: 24 }}
           refreshControl={
             <RefreshControl
               refreshing={isRefetching}
@@ -87,11 +87,3 @@ export default function AttendanceScreen() {
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  safe: { flex: 1 },
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  titleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, paddingBottom: 8 },
-  list: { paddingBottom: 24 },
-  empty: { textAlign: 'center', padding: 32 },
-});

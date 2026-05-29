@@ -1,4 +1,4 @@
-import { ScrollView, StyleSheet } from 'react-native';
+import { ScrollView } from 'react-native';
 import { Card, Text, useTheme } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
@@ -15,15 +15,15 @@ const SECTIONS = [
 export default function MoreScreen() {
   const theme = useTheme();
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: theme.colors.background }]}>
-      <ScrollView contentContainerStyle={styles.container}>
-        <Text variant="headlineMedium" style={styles.heading}>
+    <SafeAreaView className="flex-1" style={{ backgroundColor: theme.colors.background }}>
+      <ScrollView contentContainerStyle={{ padding: 16 }}>
+        <Text variant="headlineMedium" style={{ marginBottom: 16 }}>
           More
         </Text>
         {SECTIONS.map((s) => (
           <Card
             key={s.href}
-            style={styles.card}
+            style={{ marginBottom: 8 }}
             onPress={() => router.push(s.href as never)}
           >
             <Card.Title
@@ -51,10 +51,3 @@ export default function MoreScreen() {
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  safe: { flex: 1 },
-  container: { padding: 16 },
-  heading: { marginBottom: 16 },
-  card: { marginBottom: 8 },
-});

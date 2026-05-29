@@ -1,4 +1,4 @@
-import { FlatList, RefreshControl, StyleSheet, View } from 'react-native';
+import { FlatList, RefreshControl, View } from 'react-native';
 import { ActivityIndicator, Banner, Card, Chip, Text, useTheme } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useQuery } from '@tanstack/react-query';
@@ -12,13 +12,13 @@ function AssignmentCard({ a }: { a: LmsAssignment }) {
   const isOverdue = a.dueDate ? new Date(a.dueDate) < new Date() : false;
   const dueColor = isOverdue ? theme.colors.error : theme.colors.onSurfaceVariant;
   return (
-    <Card style={styles.card} mode="elevated">
+    <Card style={{ marginHorizontal: 16, marginBottom: 8 }} mode="elevated">
       <Card.Content>
         <Text variant="titleSmall">{a.title}</Text>
         <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant, marginTop: 2 }}>
           {a.courseName}
         </Text>
-        <View style={styles.row}>
+        <View className="flex-row items-center justify-between" style={{ marginTop: 4 }}>
           {a.dueDate ? (
             <Text variant="labelSmall" style={{ color: dueColor, marginTop: 6 }}>
               Due: {new Date(a.dueDate).toLocaleDateString()}
@@ -62,37 +62,27 @@ export default function LmsScreen() {
   const assignments = cached;
 
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: theme.colors.background }]}>
+    <SafeAreaView className="flex-1" style={{ backgroundColor: theme.colors.background }}>
       {isError && (
         <Banner visible icon="alert-circle" actions={[{ label: 'Retry', onPress: () => refetch() }]}>
           {error instanceof Error ? error.message : 'Failed to load LMS.'}
         </Banner>
       )}
       {isLoading && assignments.length === 0 ? (
-        <View style={styles.center}><ActivityIndicator size="large" /></View>
+        <View className="flex-1 items-center justify-center"><ActivityIndicator size="large" /></View>
       ) : (
         <FlatList
           data={assignments}
           keyExtractor={(a) => String(a.id)}
           renderItem={({ item }) => <AssignmentCard a={item} />}
-          ListHeaderComponent={<Text variant="headlineMedium" style={styles.title}>LMS / Moodle</Text>}
+          ListHeaderComponent={<Text variant="headlineMedium" style={{ padding: 16, paddingBottom: 8 }}>LMS / Moodle</Text>}
           ListEmptyComponent={
-            <Text style={[styles.empty, { color: theme.colors.onSurfaceVariant }]}>No assignments found.</Text>
+            <Text className="text-center p-8" style={{ color: theme.colors.onSurfaceVariant }}>No assignments found.</Text>
           }
-          contentContainerStyle={styles.list}
+          contentContainerStyle={{ paddingBottom: 24 }}
           refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} colors={[theme.colors.primary]} />}
         />
       )}
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  safe: { flex: 1 },
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  title: { padding: 16, paddingBottom: 8 },
-  list: { paddingBottom: 24 },
-  card: { marginHorizontal: 16, marginBottom: 8 },
-  row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginTop: 4 },
-  empty: { textAlign: 'center', padding: 32 },
-});

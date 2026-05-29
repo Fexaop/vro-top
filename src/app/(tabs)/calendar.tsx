@@ -1,4 +1,4 @@
-import { SectionList, StyleSheet, View, RefreshControl } from 'react-native';
+import { SectionList, View, RefreshControl } from 'react-native';
 import { ActivityIndicator, Banner, Chip, Text, useTheme } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useQuery } from '@tanstack/react-query';
@@ -42,14 +42,14 @@ export default function CalendarScreen() {
   const sections = groupByMonth(data ?? []);
 
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: theme.colors.background }]}>
+    <SafeAreaView className="flex-1" style={{ backgroundColor: theme.colors.background }}>
       {isError && (
         <Banner visible icon="alert-circle" actions={[{ label: 'Retry', onPress: () => refetch() }]}>
           {error instanceof Error ? error.message : 'Failed to load calendar.'}
         </Banner>
       )}
       {isLoading ? (
-        <View style={styles.center}>
+        <View className="flex-1 items-center justify-center">
           <ActivityIndicator size="large" />
         </View>
       ) : (
@@ -57,22 +57,22 @@ export default function CalendarScreen() {
           sections={sections}
           keyExtractor={(item, i) => item.date + i}
           renderSectionHeader={({ section: { title } }) => (
-            <View style={[styles.sectionHeader, { backgroundColor: theme.colors.surfaceVariant }]}>
+            <View style={{ paddingHorizontal: 16, paddingVertical: 8, backgroundColor: theme.colors.surfaceVariant }}>
               <Text variant="titleMedium" style={{ color: theme.colors.onSurfaceVariant }}>
                 {title}
               </Text>
             </View>
           )}
           renderItem={({ item }) => (
-            <View style={[styles.eventRow, { borderBottomColor: theme.colors.outlineVariant }]}>
-              <Text variant="bodySmall" style={[styles.date, { color: theme.colors.onSurfaceVariant }]}>
+            <View style={{ flexDirection: 'row', padding: 12, paddingHorizontal: 16, borderBottomWidth: 0.5, gap: 12, borderBottomColor: theme.colors.outlineVariant }}>
+              <Text variant="bodySmall" style={{ width: 80, paddingTop: 2, color: theme.colors.onSurfaceVariant }}>
                 {item.date}
               </Text>
-              <View style={styles.eventContent}>
+              <View style={{ flex: 1, gap: 4 }}>
                 <Text variant="bodyMedium" style={{ color: theme.colors.onSurface }}>{item.text}</Text>
                 <Chip
                   compact
-                  style={[styles.chip, { backgroundColor: TYPE_COLORS[item.type] + '22' }]}
+                  style={{ alignSelf: 'flex-start', height: 22, backgroundColor: TYPE_COLORS[item.type] + '22' }}
                   textStyle={{ color: TYPE_COLORS[item.type], fontSize: 11 }}
                 >
                   {item.type}
@@ -81,30 +81,17 @@ export default function CalendarScreen() {
             </View>
           )}
           ListHeaderComponent={
-            <Text variant="headlineMedium" style={styles.title}>Academic Calendar</Text>
+            <Text variant="headlineMedium" style={{ padding: 16, paddingBottom: 8 }}>Academic Calendar</Text>
           }
           ListEmptyComponent={
-            <Text style={[styles.empty, { color: theme.colors.onSurfaceVariant }]}>
+            <Text className="text-center p-8" style={{ color: theme.colors.onSurfaceVariant }}>
               No calendar events found.
             </Text>
           }
-          contentContainerStyle={styles.list}
+          contentContainerStyle={{ paddingBottom: 24 }}
           refreshControl={<RefreshControl refreshing={isRefetching} onRefresh={refetch} colors={[theme.colors.primary]} />}
         />
       )}
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  safe: { flex: 1 },
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  title: { padding: 16, paddingBottom: 8 },
-  list: { paddingBottom: 24 },
-  empty: { textAlign: 'center', padding: 32 },
-  sectionHeader: { paddingHorizontal: 16, paddingVertical: 8, fontWeight: 'bold' },
-  eventRow: { flexDirection: 'row', padding: 12, paddingHorizontal: 16, borderBottomWidth: StyleSheet.hairlineWidth, gap: 12 },
-  date: { width: 80, paddingTop: 2 },
-  eventContent: { flex: 1, gap: 4 },
-  chip: { alignSelf: 'flex-start', height: 22 },
-});

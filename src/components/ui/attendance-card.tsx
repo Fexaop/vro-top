@@ -1,4 +1,4 @@
-import { StyleSheet, View } from 'react-native';
+import { View } from 'react-native';
 import { Card, ProgressBar, Text, useTheme } from 'react-native-paper';
 import type { AttendanceCourse } from '@/types/attendance';
 
@@ -20,10 +20,10 @@ export function AttendanceCard({ course, onPress }: Props) {
       : theme.colors.tertiary;
 
   return (
-    <Card style={styles.card} onPress={onPress} mode="elevated">
+    <Card style={{ marginHorizontal: 16, marginBottom: 8 }} onPress={onPress} mode="elevated">
       <Card.Content>
-        <View style={styles.header}>
-          <View style={styles.info}>
+        <View className="flex-row items-start justify-between">
+          <View className="flex-1 mr-3">
             <Text variant="titleSmall" numberOfLines={1}>
               {course.courseTitle}
             </Text>
@@ -42,10 +42,10 @@ export function AttendanceCard({ course, onPress }: Props) {
         <ProgressBar
           progress={pct / 100}
           color={barColor}
-          style={styles.bar}
+          style={{ marginTop: 10, height: 6, borderRadius: 3 }}
         />
 
-        <View style={styles.footer}>
+        <View className="flex-row justify-between" style={{ marginTop: 6 }}>
           <Text variant="bodySmall" style={{ color: theme.colors.onSurfaceVariant }}>
             {course.attended}/{course.totalClasses} classes
           </Text>
@@ -63,11 +63,3 @@ export function AttendanceCard({ course, onPress }: Props) {
     </Card>
   );
 }
-
-const styles = StyleSheet.create({
-  card: { marginHorizontal: 16, marginBottom: 8 },
-  header: { flexDirection: 'row', alignItems: 'flex-start', justifyContent: 'space-between' },
-  info: { flex: 1, marginRight: 12 },
-  bar: { marginTop: 10, height: 6, borderRadius: 3 },
-  footer: { flexDirection: 'row', justifyContent: 'space-between', marginTop: 6 },
-});

@@ -1,4 +1,4 @@
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, View } from 'react-native';
 import { Card, Chip, Divider, Text, useTheme } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
@@ -19,23 +19,23 @@ export default function LaundryScreen() {
   const todayName = DAYS[new Date().getDay() === 0 ? 6 : new Date().getDay() - 1];
 
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
-      <ScrollView contentContainerStyle={styles.content}>
-        <Text variant="headlineMedium" style={styles.title}>Laundry Schedule</Text>
+    <SafeAreaView className="flex-1" style={{ backgroundColor: colors.background }}>
+      <ScrollView contentContainerStyle={{ padding: 16 }}>
+        <Text variant="headlineMedium" style={{ marginBottom: 12 }}>Laundry Schedule</Text>
         <Text variant="bodyMedium" style={{ color: colors.onSurfaceVariant, marginBottom: 16 }}>
           Laundry is done wing-wise. Check your wing below.
         </Text>
 
-        <Card mode="outlined" style={styles.card}>
+        <Card mode="outlined" style={{ marginBottom: 12 }}>
           <Card.Content>
             <Text variant="titleMedium">Weekly Schedule</Text>
             <Divider style={{ marginVertical: 8 }} />
             {SCHEDULE.map(({ day, slot }) => (
-              <View key={day} style={[styles.row, { paddingVertical: 6 }]}>
+              <View key={day} className="flex-row items-center justify-between gap-2" style={{ paddingVertical: 6 }}>
                 <Text variant="bodyMedium" style={day === todayName ? { fontWeight: 'bold', color: colors.primary } : {}}>
                   {day}
                 </Text>
-                <View style={styles.row}>
+                <View className="flex-row items-center justify-between gap-2">
                   <Text variant="bodyMedium" style={{ color: colors.onSurfaceVariant }}>{slot}</Text>
                   {day === todayName && <Chip compact>Today</Chip>}
                 </View>
@@ -44,7 +44,7 @@ export default function LaundryScreen() {
           </Card.Content>
         </Card>
 
-        <Card mode="outlined" style={styles.card}>
+        <Card mode="outlined" style={{ marginBottom: 12 }}>
           <Card.Content>
             <Text variant="titleMedium">Instructions</Text>
             <Divider style={{ marginVertical: 8 }} />
@@ -65,11 +65,3 @@ export default function LaundryScreen() {
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  safe: { flex: 1 },
-  content: { padding: 16 },
-  title: { marginBottom: 12 },
-  card: { marginBottom: 12 },
-  row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
-});

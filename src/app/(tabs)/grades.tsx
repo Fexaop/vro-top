@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { FlatList, RefreshControl, StyleSheet, View } from 'react-native';
+import { FlatList, RefreshControl, View } from 'react-native';
 import { ActivityIndicator, Banner, Button, Card, Chip, IconButton, Text, useTheme } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
@@ -26,9 +26,9 @@ function GradeCard({ item }: { item: CourseGrade }) {
   const gradeLabel = item.grade ? item.grade : 'In Progress';
 
   return (
-    <Card style={styles.card} mode="outlined">
+    <Card style={{ marginBottom: 0 }} mode="outlined">
       <Card.Content>
-        <View style={styles.row}>
+        <View className="flex-row items-center justify-between gap-2">
           <View style={{ flex: 1 }}>
             <Text variant="titleSmall" numberOfLines={1}>{item.courseTitle}</Text>
             <Text variant="bodySmall" style={{ color: colors.onSurfaceVariant }}>{item.courseCode}</Text>
@@ -48,7 +48,7 @@ function GradeCard({ item }: { item: CourseGrade }) {
           </View>
         </View>
         {totalMax > 0 ? (
-          <View style={[styles.row, { marginTop: 6 }]}>
+          <View className="flex-row items-center justify-between gap-2" style={{ marginTop: 6 }}>
             <Text variant="labelSmall" style={{ color: colors.onSurfaceVariant }}>
               {`Marks: ${totalScored.toFixed(1)} / ${totalMax}`}
             </Text>
@@ -94,13 +94,13 @@ export default function GradesScreen() {
   const lastUpdatedStr = lastFetched !== null ? new Date(lastFetched).toLocaleTimeString() : null;
 
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
+    <SafeAreaView className="flex-1" style={{ backgroundColor: colors.background }}>
       {isError ? (
         <Banner visible actions={[{ label: 'Retry', onPress: () => void refetch() }]}>
           {error instanceof Error ? error.message : String(error)}
         </Banner>
       ) : null}
-      <View style={styles.header}>
+      <View className="flex-row items-center justify-between p-4">
         <View style={{ flex: 1 }}>
           <Text variant="headlineMedium">Grades</Text>
           {lastUpdatedStr !== null ? (
@@ -109,7 +109,7 @@ export default function GradesScreen() {
             </Text>
           ) : null}
         </View>
-        <View style={styles.row}>
+        <View className="flex-row items-center gap-1">
           {cgpa != null ? (
             <Chip icon="school">{`CGPA ${cgpa}`}</Chip>
           ) : null}
@@ -132,31 +132,21 @@ export default function GradesScreen() {
         </Button>
       ) : null}
       {isLoading && !hasData ? (
-        <View style={styles.center}><ActivityIndicator /></View>
+        <View className="flex-1 justify-center items-center"><ActivityIndicator /></View>
       ) : (
         <FlatList
           data={displayData}
           keyExtractor={(i, idx) => `${i.courseCode}-${idx}`}
           renderItem={({ item }) => <GradeCard item={item} />}
-          contentContainerStyle={styles.list}
+          contentContainerStyle={{ padding: 16, gap: 12, paddingBottom: 32 }}
           refreshControl={
             <RefreshControl refreshing={isRefetching} onRefresh={() => void refetch()} colors={[colors.primary]} />
           }
           ListEmptyComponent={
-            <Text style={[styles.empty, { color: colors.onSurfaceVariant }]}>No grades data found.</Text>
+            <Text className="text-center p-8" style={{ color: colors.onSurfaceVariant }}>No grades data found.</Text>
           }
         />
       )}
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  safe: { flex: 1 },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16 },
-  row: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  list: { padding: 16, gap: 12, paddingBottom: 32 },
-  card: { marginBottom: 0 },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  empty: { textAlign: 'center', padding: 32 },
-});

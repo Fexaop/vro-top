@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, View } from 'react-native';
 import { Button, Divider, HelperText, List, Snackbar, Switch, Text, TextInput, useTheme } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSettingsStore, SEMESTER_LIST } from '@/store/settings-store';
@@ -47,13 +47,13 @@ export default function SettingsScreen() {
   }
 
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: theme.colors.background }]}>
+    <SafeAreaView className="flex-1" style={{ backgroundColor: theme.colors.background }}>
       <ScrollView>
-        <Text variant="headlineMedium" style={styles.title}>Settings</Text>
+        <Text variant="headlineMedium" style={{ padding: 16 }}>Settings</Text>
 
         <List.Section>
           <List.Subheader>Account</List.Subheader>
-          <View style={styles.credForm}>
+          <View style={{ paddingHorizontal: 16, paddingBottom: 8, gap: 4 }}>
             <TextInput
               label="Registration Number"
               value={newUsername}
@@ -62,7 +62,7 @@ export default function SettingsScreen() {
               autoCapitalize="characters"
               autoCorrect={false}
               left={<TextInput.Icon icon="account" />}
-              style={styles.input}
+              style={{ marginBottom: 4 }}
             />
             <TextInput
               label="New Password"
@@ -77,7 +77,7 @@ export default function SettingsScreen() {
                   onPress={() => setShowPassword((v) => !v)}
                 />
               }
-              style={styles.input}
+              style={{ marginBottom: 4 }}
             />
             {credsError ? <HelperText type="error" visible>{credsError}</HelperText> : null}
             <Button mode="contained-tonal" onPress={handleSaveCreds} icon="content-save">
@@ -93,7 +93,15 @@ export default function SettingsScreen() {
 
         <List.Section>
           <List.Subheader>Semester</List.Subheader>
-          <View style={styles.semCard}>
+          <View style={{
+            marginHorizontal: 16,
+            marginBottom: 8,
+            padding: 12,
+            borderRadius: 8,
+            backgroundColor: 'transparent',
+            borderWidth: 1,
+            borderColor: 'rgba(0,0,0,0.12)',
+          }}>
             <Text variant="labelMedium" style={{ color: theme.colors.onSurfaceVariant, marginBottom: 4 }}>
               Active Semester
             </Text>
@@ -175,7 +183,7 @@ export default function SettingsScreen() {
               value={workerUrl}
               onChangeText={(v) => void setWorkerUrl(v)}
               placeholder="https://unicc-worker.your-name.workers.dev"
-              style={styles.input}
+              style={{ marginBottom: 4 }}
               mode="outlined"
               autoCapitalize="none"
               autoCorrect={false}
@@ -194,19 +202,3 @@ export default function SettingsScreen() {
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  safe: { flex: 1 },
-  title: { padding: 16 },
-  credForm: { paddingHorizontal: 16, paddingBottom: 8, gap: 4 },
-  input: { marginBottom: 4 },
-  semCard: {
-    marginHorizontal: 16,
-    marginBottom: 8,
-    padding: 12,
-    borderRadius: 8,
-    backgroundColor: 'transparent',
-    borderWidth: 1,
-    borderColor: 'rgba(0,0,0,0.12)',
-  },
-});

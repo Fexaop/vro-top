@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { Dimensions, FlatList, RefreshControl, StyleSheet, View } from 'react-native';
+import { Dimensions, FlatList, RefreshControl, View } from 'react-native';
 import { ActivityIndicator, Banner, Card, Chip, Divider, Text, useTheme } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
@@ -20,7 +20,7 @@ function CgpaTrendChart({ semesters }: { semesters: SemesterResult[] }) {
   if (points.length < 2) return null;
 
   return (
-    <Card mode="outlined" style={styles.chartCard}>
+    <Card mode="outlined" style={{ marginBottom: 12 }}>
       <Card.Content>
         <Text variant="titleMedium" style={{ marginBottom: 12 }}>CGPA Trend</Text>
         <LineChart
@@ -54,12 +54,12 @@ function SemCard({ item }: { item: SemesterResult }) {
   const { colors } = useTheme();
   return (
     <Card
-      style={styles.card}
+      style={{ marginBottom: 0 }}
       mode="outlined"
       onPress={() => router.push(`/grades/${encodeURIComponent(item.semesterCode)}`)}
     >
       <Card.Content>
-        <View style={styles.row}>
+        <View className="flex-row items-center justify-between gap-2">
           <Text variant="titleSmall">{item.semesterName}</Text>
           <Chip compact>{`SGPA ${item.sgpa?.toFixed(2) ?? 'N/A'}`}</Chip>
         </View>
@@ -68,7 +68,7 @@ function SemCard({ item }: { item: SemesterResult }) {
         </Text>
         <Divider style={{ marginVertical: 8 }} />
         {item.courses.slice(0, 3).map((c, ci) => (
-          <View key={`${c.courseCode}-${ci}`} style={[styles.row, { marginBottom: 4 }]}>
+          <View key={`${c.courseCode}-${ci}`} className="flex-row items-center justify-between gap-2" style={{ marginBottom: 4 }}>
             <Text variant="bodySmall" style={{ flex: 1, color: colors.onSurfaceVariant }} numberOfLines={1}>
               {c.courseTitle}
             </Text>
@@ -112,13 +112,13 @@ export default function GradesHistory() {
   const latestCgpa = data.find((s) => s.cgpa != null)?.cgpa;
 
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
+    <SafeAreaView className="flex-1" style={{ backgroundColor: colors.background }}>
       {isError && (
         <Banner visible actions={[{ label: 'Retry', onPress: () => refetch() }]}>
           {error instanceof Error ? error.message : String(error)}
         </Banner>
       )}
-      <View style={styles.header}>
+      <View className="flex-row items-center justify-between p-4">
         <View style={{ flex: 1 }}>
           <Text variant="headlineMedium">Grade History</Text>
           {lastFetched !== null ? (
@@ -132,33 +132,22 @@ export default function GradesHistory() {
         ) : null}
       </View>
       {isLoading && !hasCache ? (
-        <View style={styles.center}><ActivityIndicator /></View>
+        <View className="flex-1 justify-center items-center"><ActivityIndicator /></View>
       ) : (
         <FlatList
           data={data}
           keyExtractor={(i) => i.semesterCode}
           ListHeaderComponent={data.length > 1 ? <CgpaTrendChart semesters={data} /> : null}
           renderItem={({ item }) => <SemCard item={item} />}
-          contentContainerStyle={styles.list}
+          contentContainerStyle={{ padding: 16, gap: 12, paddingBottom: 32 }}
           refreshControl={
             <RefreshControl refreshing={isRefetching} onRefresh={() => refetch()} colors={[colors.primary]} />
           }
           ListEmptyComponent={
-            <Text style={[styles.empty, { color: colors.onSurfaceVariant }]}>No grade history found.</Text>
+            <Text className="text-center p-8" style={{ color: colors.onSurfaceVariant }}>No grade history found.</Text>
           }
         />
       )}
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  safe: { flex: 1 },
-  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16 },
-  row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
-  list: { padding: 16, gap: 12, paddingBottom: 32 },
-  card: { marginBottom: 0 },
-  chartCard: { marginBottom: 12 },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
-  empty: { textAlign: 'center', padding: 32 },
-});

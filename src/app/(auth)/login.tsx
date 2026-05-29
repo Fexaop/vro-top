@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
+import { KeyboardAvoidingView, Platform, ScrollView, View } from 'react-native';
 import { Banner, Button, HelperText, Text, TextInput, useTheme } from 'react-native-paper';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { router } from 'expo-router';
@@ -56,16 +56,16 @@ export default function LoginScreen() {
   }
 
   return (
-    <SafeAreaView style={[styles.safe, { backgroundColor: theme.colors.background }]}>
+    <SafeAreaView className="flex-1" style={{ backgroundColor: theme.colors.background }}>
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={styles.flex}
+        className="flex-1"
       >
         <ScrollView
-          contentContainerStyle={styles.container}
+          contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', padding: 24 }}
           keyboardShouldPersistTaps="handled"
         >
-          <View style={styles.header}>
+          <View className="items-center" style={{ marginBottom: 32 }}>
             <Text variant="displaySmall" style={{ color: theme.colors.primary }}>
               VIT Portal
             </Text>
@@ -75,7 +75,7 @@ export default function LoginScreen() {
           </View>
 
           {isWeb && !scraperReady && (
-            <View style={styles.bannerWrap}>
+            <View style={{ marginBottom: 24, gap: 8 }}>
               <Banner
                 visible
                 icon="cloud-alert"
@@ -94,7 +94,7 @@ export default function LoginScreen() {
                 mode="outlined"
                 autoCapitalize="none"
                 autoCorrect={false}
-                style={styles.input}
+                style={{ marginBottom: 4 }}
                 right={
                   <TextInput.Icon
                     icon="content-save"
@@ -105,7 +105,7 @@ export default function LoginScreen() {
             </View>
           )}
 
-          <View style={styles.form}>
+          <View style={{ gap: 8 }}>
             <TextInput
               label="Registration Number"
               value={username}
@@ -114,7 +114,7 @@ export default function LoginScreen() {
               autoCapitalize="characters"
               autoCorrect={false}
               left={<TextInput.Icon icon="account" />}
-              style={styles.input}
+              style={{ marginBottom: 4 }}
             />
             <TextInput
               label="Password"
@@ -129,7 +129,7 @@ export default function LoginScreen() {
                   onPress={() => setShowPassword((v) => !v)}
                 />
               }
-              style={styles.input}
+              style={{ marginBottom: 4 }}
             />
 
             {error ? (
@@ -143,8 +143,8 @@ export default function LoginScreen() {
               onPress={handleLogin}
               loading={loading}
               disabled={loading || (isWeb && !scraperReady)}
-              style={styles.button}
-              contentStyle={styles.buttonContent}
+              style={{ marginTop: 16 }}
+              contentStyle={{ paddingVertical: 6 }}
             >
               {loading ? 'Signing in…' : 'Sign In'}
             </Button>
@@ -152,7 +152,7 @@ export default function LoginScreen() {
             <Button
               mode="text"
               onPress={() => router.push('/(auth)/settings')}
-              style={styles.settingsBtn}
+              style={{ marginTop: 4 }}
               icon="cog"
             >
               Settings
@@ -160,7 +160,7 @@ export default function LoginScreen() {
 
             <Text
               variant="bodySmall"
-              style={[styles.note, { color: theme.colors.onSurfaceVariant }]}
+              style={{ textAlign: 'center', marginTop: 8, lineHeight: 18, color: theme.colors.onSurfaceVariant }}
             >
               {isWeb
                 ? 'On web, credentials are sent to your CF Worker and never stored externally.'
@@ -172,17 +172,3 @@ export default function LoginScreen() {
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  safe: { flex: 1 },
-  flex: { flex: 1 },
-  container: { flexGrow: 1, justifyContent: 'center', padding: 24 },
-  header: { alignItems: 'center', marginBottom: 32 },
-  bannerWrap: { marginBottom: 24, gap: 8 },
-  form: { gap: 8 },
-  input: { marginBottom: 4 },
-  button: { marginTop: 16 },
-  buttonContent: { paddingVertical: 6 },
-  settingsBtn: { marginTop: 4 },
-  note: { textAlign: 'center', marginTop: 8, lineHeight: 18 },
-});

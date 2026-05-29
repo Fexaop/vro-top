@@ -1,4 +1,4 @@
-import { StyleSheet, View } from 'react-native';
+import { View } from 'react-native';
 import { Drawer } from 'react-native-paper';
 import { Slot, useRouter, usePathname } from 'expo-router';
 import { useTheme } from 'react-native-paper';
@@ -21,13 +21,13 @@ export function AppShell() {
   const pathname = usePathname();
 
   return (
-    <View style={styles.root}>
-      <View style={[styles.sidebar, { backgroundColor: theme.colors.surface, borderRightColor: theme.colors.outlineVariant }]}>
-        <Drawer.Section style={styles.section}>
+    <View className="flex-1 flex-row">
+      <View style={{ width: 240, borderRightWidth: 0.5, paddingTop: 16, backgroundColor: theme.colors.surface, borderRightColor: theme.colors.outlineVariant }}>
+        <Drawer.Section style={{ marginHorizontal: 0 }}>
           <Drawer.Item
             label="VIT Portal"
             icon="school"
-            style={styles.sectionHeader}
+            style={{ opacity: 0.7 }}
           />
           {NAV_ITEMS.map((item) => (
             <Drawer.Item
@@ -40,21 +40,9 @@ export function AppShell() {
           ))}
         </Drawer.Section>
       </View>
-      <View style={styles.content}>
+      <View className="flex-1">
         <Slot />
       </View>
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  root: { flex: 1, flexDirection: 'row' },
-  sidebar: {
-    width: 240,
-    borderRightWidth: StyleSheet.hairlineWidth,
-    paddingTop: 16,
-  },
-  section: { marginHorizontal: 0 },
-  sectionHeader: { opacity: 0.7 },
-  content: { flex: 1 },
-});
