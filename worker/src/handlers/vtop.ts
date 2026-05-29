@@ -29,63 +29,78 @@ async function vtopPost(path: string, session: Session, body: Record<string, str
   return res.text();
 }
 
-// Step 1: prelogin — returns cookies + csrfToken + captchaBase64 for client to solve
+// Step 1: prelogin — retries until VTOP serves its own image captcha (not Google reCAPTCHA)
+// VTOP alternates between image captcha and reCAPTCHA — keep retrying until we get the solvable one
 export async function handleVtopPrelogin(c: Context): Promise<Response> {
-  try {
-    // GET /vtop/prelogin/setup
-    const setupRes = await fetch(`${VTOP_BASE}/vtop/prelogin/setup`, {
-      headers: { 'User-Agent': UA },
-      redirect: 'follow',
-    });
-    let cookies = mergeCookies('', setupRes.headers.get('set-cookie'));
-    const setupHtml = await setupRes.text();
-    const csrf = extractCsrf(setupHtml);
-    if (!csrf) return c.json({ error: 'Cannot extract CSRF from VTOP — may be down' }, 503);
+  const MAX_RETRIES = 15;
+  let lastError = 'Could not get a solvable captcha from VTOP after retries';
 
-    // POST /vtop/prelogin/setup (flag=VTOP)
-    const flagRes = await fetch(`${VTOP_BASE}/vtop/prelogin/setup`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded', Cookie: cookies, 'User-Agent': UA },
-      body: new URLSearchParams({ _csrf: csrf, flag: 'VTOP' }).toString(),
-      redirect: 'follow',
-    });
-    cookies = mergeCookies(cookies, flagRes.headers.get('set-cookie'));
+  for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+    try {
+      // GET /vtop/prelogin/setup
+      const setupRes = await fetch(`${VTOP_BASE}/vtop/prelogin/setup`, {
+        headers: { 'User-Agent': UA },
+        redirect: 'follow',
+      });
+      let cookies = mergeCookies('', setupRes.headers.get('set-cookie'));
+      const setupHtml = await setupRes.text();
+      const csrf = extractCsrf(setupHtml);
+      if (!csrf) { await sleep(1000); continue; }
 
-    // GET /vtop/login
-    const loginRes = await fetch(`${VTOP_BASE}/vtop/login`, {
-      headers: { Cookie: cookies, 'User-Agent': UA, Accept: 'text/html' },
-      redirect: 'follow',
-    });
-    cookies = mergeCookies(cookies, loginRes.headers.get('set-cookie'));
-    const loginHtml = await loginRes.text();
+      // POST /vtop/prelogin/setup (flag=VTOP)
+      const flagRes = await fetch(`${VTOP_BASE}/vtop/prelogin/setup`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded', Cookie: cookies, 'User-Agent': UA },
+        body: new URLSearchParams({ _csrf: csrf, flag: 'VTOP' }).toString(),
+        redirect: 'follow',
+      });
+      cookies = mergeCookies(cookies, flagRes.headers.get('set-cookie'));
 
-    if (loginHtml.includes('gResponse') || loginHtml.includes('g-recaptcha')) {
-      return c.json({ error: 'VTOP is using Google reCAPTCHA — cannot auto-solve' }, 503);
+      // GET /vtop/login
+      const loginRes = await fetch(`${VTOP_BASE}/vtop/login`, {
+        headers: { Cookie: cookies, 'User-Agent': UA, Accept: 'text/html' },
+        redirect: 'follow',
+      });
+      cookies = mergeCookies(cookies, loginRes.headers.get('set-cookie'));
+      const loginHtml = await loginRes.text();
+
+      // If Google reCAPTCHA is active, retry from scratch — VTOP rotates back to image captcha
+      if (loginHtml.includes('gResponse') || loginHtml.includes('g-recaptcha')) {
+        await sleep(1000);
+        continue;
+      }
+
+      const loginCsrf = extractCsrf(loginHtml) || csrf;
+
+      // Find captcha image src
+      const captchaSrcMatch = loginHtml.match(/id="captchaBlock"[\s\S]*?<img[^>]+src="([^"]+)"/i)
+        ?? loginHtml.match(/<img[^>]+id="captchaImg"[^>]+src="([^"]+)"/i)
+        ?? loginHtml.match(/src="([^"]*captcha[^"]+)"/i);
+      const captchaSrc = captchaSrcMatch?.[1] ?? null;
+
+      let captchaBase64 = '';
+      if (captchaSrc) {
+        const captchaUrl = captchaSrc.startsWith('http') ? captchaSrc : `${VTOP_BASE}${captchaSrc}`;
+        const imgRes = await fetch(captchaUrl, { headers: { Cookie: cookies, 'User-Agent': UA } });
+        const buf = await imgRes.arrayBuffer();
+        const bytes = new Uint8Array(buf);
+        let bin = '';
+        for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]!);
+        captchaBase64 = 'data:image/jpeg;base64,' + btoa(bin);
+      }
+
+      return c.json({ cookies, csrfToken: loginCsrf, captchaBase64 });
+    } catch (e) {
+      lastError = String(e);
+      await sleep(1000);
     }
-
-    const loginCsrf = extractCsrf(loginHtml) || csrf;
-
-    // Find captcha image src
-    const captchaSrcMatch = loginHtml.match(/id="captchaBlock"[\s\S]*?<img[^>]+src="([^"]+)"/i)
-      ?? loginHtml.match(/<img[^>]+id="captchaImg"[^>]+src="([^"]+)"/i)
-      ?? loginHtml.match(/src="([^"]*captcha[^"]+)"/i);
-    const captchaSrc = captchaSrcMatch?.[1] ?? null;
-
-    let captchaBase64 = '';
-    if (captchaSrc) {
-      const captchaUrl = captchaSrc.startsWith('http') ? captchaSrc : `${VTOP_BASE}${captchaSrc}`;
-      const imgRes = await fetch(captchaUrl, { headers: { Cookie: cookies, 'User-Agent': UA } });
-      const buf = await imgRes.arrayBuffer();
-      const bytes = new Uint8Array(buf);
-      let bin = '';
-      for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]!);
-      captchaBase64 = 'data:image/jpeg;base64,' + btoa(bin);
-    }
-
-    return c.json({ cookies, csrfToken: loginCsrf, captchaBase64 });
-  } catch (e) {
-    return c.json({ error: String(e) }, 502);
   }
+
+  return c.json({ error: lastError }, 503);
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((r) => setTimeout(r, ms));
 }
 
 // Step 2: login — client already solved captcha, we just POST it
