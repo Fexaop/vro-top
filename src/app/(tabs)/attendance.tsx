@@ -6,6 +6,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useScraper } from '@/hooks/use-scraper';
 import { useVtopSession } from '@/hooks/use-vtop-session';
 import { useAttendanceStore } from '@/store/attendance-store';
+import { useSettingsStore } from '@/store/settings-store';
 import { AttendanceCard } from '@/components/ui/attendance-card';
 import type { AttendanceCourse } from '@/types/attendance';
 
@@ -16,11 +17,12 @@ export default function AttendanceScreen() {
   const setCourses = useAttendanceStore((s) => s.setCourses);
   const cachedCourses = useAttendanceStore((s) => s.courses);
   const lastFetched = useAttendanceStore((s) => s.lastFetched);
+  const selectedSemester = useSettingsStore((s) => s.selectedSemester);
 
   const hasCache = cachedCourses.length > 0;
 
   const { isLoading, isError, error, refetch, isRefetching } = useQuery({
-    queryKey: ['attendance'],
+    queryKey: ['attendance', selectedSemester],
     queryFn: async () => {
       const session = await ensureFreshSession();
       const courses = await adapter.fetchAttendance(session);

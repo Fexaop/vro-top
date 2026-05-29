@@ -15,6 +15,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useScraper } from '@/hooks/use-scraper';
 import { useVtopSession } from '@/hooks/use-vtop-session';
 import { useGradesStore } from '@/store/grades-store';
+import { useSettingsStore } from '@/store/settings-store';
 import type { CourseGrade, GradeComponent } from '@/types/grades';
 
 function componentBarColor(pct: number, colors: { tertiary: string; primary: string; error: string }): string {
@@ -66,7 +67,7 @@ function MarksCard({ item }: { item: CourseGrade }) {
   const gc = gradeColor(item.grade ?? '', colors as unknown as Record<string, string>);
   const hasComponents = item.components.length > 0;
   const courseInfo = `${item.courseCode} · ${item.credits} cr`;
-  const gpLabel = item.gradePoint != null ? `GP ${item.gradePoint.toFixed(1)}` : null;
+  const gpLabel = item.gradePoint != null && item.gradePoint > 0 ? `GP ${item.gradePoint.toFixed(1)}` : null;
 
   return (
     <Card style={styles.card} mode="outlined">
@@ -129,11 +130,12 @@ export default function MarksScreen() {
   const setCurrentGrades = useGradesStore((s) => s.setCurrentGrades);
   const cachedGrades = useGradesStore((s) => s.currentGrades);
   const lastFetched = useGradesStore((s) => s.lastFetchedCurrent);
+  const selectedSemester = useSettingsStore((s) => s.selectedSemester);
 
   const hasCache = cachedGrades.length > 0;
 
   const { isLoading, isError, error, refetch, isRefetching } = useQuery({
-    queryKey: ['grades', 'current'],
+    queryKey: ['grades', 'current', selectedSemester],
     queryFn: async () => {
       const s = await ensureFreshSession();
       const grades = await scraper.fetchCurrentGrades(s);

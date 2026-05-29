@@ -7,6 +7,7 @@ import { useAuthStore } from '@/store/auth-store';
 import { useScraper } from '@/hooks/use-scraper';
 import { useVtopSession } from '@/hooks/use-vtop-session';
 import { useGradesStore } from '@/store/grades-store';
+import { useSettingsStore } from '@/store/settings-store';
 import type { CourseGrade } from '@/types/grades';
 
 function gradeColor(grade: string, colors: Record<string, string>): string {
@@ -40,7 +41,9 @@ function GradeCard({ item }: { item: CourseGrade }) {
               {gradeLabel}
             </Chip>
             <Text variant="labelSmall" style={{ color: colors.onSurfaceVariant }}>
-              {`${item.credits} cr · GP ${item.gradePoint?.toFixed(1) ?? 'N/A'}`}
+              {item.gradePoint != null && item.gradePoint > 0
+                ? `${item.credits} cr · GP ${item.gradePoint.toFixed(1)}`
+                : `${item.credits} cr`}
             </Text>
           </View>
         </View>
@@ -67,11 +70,12 @@ export default function GradesScreen() {
   const setCurrentGrades = useGradesStore((s) => s.setCurrentGrades);
   const cachedGrades = useGradesStore((s) => s.currentGrades);
   const lastFetched = useGradesStore((s) => s.lastFetchedCurrent);
+  const selectedSemester = useSettingsStore((s) => s.selectedSemester);
 
   const hasCache = cachedGrades.length > 0;
 
   const { isLoading, isError, error, refetch, isRefetching } = useQuery({
-    queryKey: ['grades', 'current'],
+    queryKey: ['grades', 'current', selectedSemester],
     queryFn: async () => {
       const s = await ensureFreshSession();
       const grades = await scraper.fetchCurrentGrades(s);
@@ -85,8 +89,8 @@ export default function GradesScreen() {
 
   const data = cachedGrades;
   const cgpa = data.length > 0
-    ? (data.reduce((sum, g) => sum + (g.gradePoint ?? 0) * g.credits, 0) /
-        Math.max(data.reduce((sum, g) => sum + (g.gradePoint != null ? g.credits : 0), 0), 1)).toFixed(2)
+    ? (data.reduce((sum, g) => sum + (g.gradePoint != null && g.gradePoint > 0 ? g.gradePoint * g.credits : 0), 0) /
+        Math.max(data.reduce((sum, g) => sum + (g.gradePoint != null && g.gradePoint > 0 ? g.credits : 0), 0), 1)).toFixed(2)
     : null;
 
   const semCode = session?.semesterCode ?? null;

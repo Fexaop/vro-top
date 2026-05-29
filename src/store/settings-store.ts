@@ -91,7 +91,22 @@ export const useSettingsStore = create<SettingsState>((set) => ({
   setShowCgpa: makeSetter('showCgpa', set),
   setDecimalPlaces: makeSetter('decimalPlaces', set),
   setNotificationsEnabled: makeSetter('notificationsEnabled', set),
-  setSelectedSemester: makeSetter('selectedSemester', set),
+  setSelectedSemester: async (code: string) => {
+    set((s) => {
+      const next = { ...s, selectedSemester: code };
+      void persistentStorage.set(SETTINGS_KEY, {
+        theme: next.theme, scraperMode: next.scraperMode, workerUrl: next.workerUrl,
+        showCgpa: next.showCgpa, decimalPlaces: next.decimalPlaces,
+        notificationsEnabled: next.notificationsEnabled, selectedSemester: code,
+      } satisfies PersistedSettings);
+      return { selectedSemester: code };
+    });
+    // Clear semester-dependent caches so screens re-fetch with the new semester
+    const { useAttendanceStore } = await import('./attendance-store');
+    const { useGradesStore } = await import('./grades-store');
+    useAttendanceStore.getState().clear();
+    useGradesStore.getState().clear();
+  },
 
   loadFromStorage: async () => {
     const saved = await persistentStorage.get<PersistedSettings>(SETTINGS_KEY);
