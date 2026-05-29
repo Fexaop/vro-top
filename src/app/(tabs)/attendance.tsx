@@ -19,9 +19,7 @@ export default function AttendanceScreen() {
   const lastFetched = useAttendanceStore((s) => s.lastFetched);
   const selectedSemester = useSettingsStore((s) => s.selectedSemester);
 
-  const hasCache = cachedCourses.length > 0;
-
-  const { isLoading, isError, error, refetch, isRefetching } = useQuery({
+  const { data, isLoading, isError, error, refetch, isRefetching } = useQuery({
     queryKey: ['attendance', selectedSemester],
     queryFn: async () => {
       const session = await ensureFreshSession();
@@ -29,12 +27,11 @@ export default function AttendanceScreen() {
       setCourses(courses);
       return courses;
     },
-    enabled: !hasCache,
-    staleTime: Infinity,
-    gcTime: Infinity,
+    staleTime: 5 * 60 * 1000,
   });
 
-  const courses = cachedCourses.slice().sort((a, b) => a.percentage - b.percentage);
+  const courses = (data ?? cachedCourses).slice().sort((a, b) => a.percentage - b.percentage);
+  const hasData = courses.length > 0;
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: theme.colors.background }]}>
@@ -48,7 +45,7 @@ export default function AttendanceScreen() {
         </Banner>
       )}
 
-      {isLoading && !hasCache ? (
+      {isLoading && !hasData ? (
         <View style={styles.center}>
           <ActivityIndicator size="large" />
           <Text variant="bodyMedium" style={{ marginTop: 12, color: theme.colors.onSurfaceVariant }}>

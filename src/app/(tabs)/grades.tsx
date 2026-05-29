@@ -72,9 +72,7 @@ export default function GradesScreen() {
   const lastFetched = useGradesStore((s) => s.lastFetchedCurrent);
   const selectedSemester = useSettingsStore((s) => s.selectedSemester);
 
-  const hasCache = cachedGrades.length > 0;
-
-  const { isLoading, isError, error, refetch, isRefetching } = useQuery({
+  const { data, isLoading, isError, error, refetch, isRefetching } = useQuery({
     queryKey: ['grades', 'current', selectedSemester],
     queryFn: async () => {
       const s = await ensureFreshSession();
@@ -82,15 +80,14 @@ export default function GradesScreen() {
       setCurrentGrades(grades);
       return grades;
     },
-    enabled: !hasCache,
-    staleTime: Infinity,
-    gcTime: Infinity,
+    staleTime: 5 * 60 * 1000,
   });
 
-  const data = cachedGrades;
-  const cgpa = data.length > 0
-    ? (data.reduce((sum, g) => sum + (g.gradePoint != null && g.gradePoint > 0 ? g.gradePoint * g.credits : 0), 0) /
-        Math.max(data.reduce((sum, g) => sum + (g.gradePoint != null && g.gradePoint > 0 ? g.credits : 0), 0), 1)).toFixed(2)
+  const displayData = data ?? cachedGrades;
+  const hasData = displayData.length > 0;
+  const cgpa = displayData.length > 0
+    ? (displayData.reduce((sum, g) => sum + (g.gradePoint != null && g.gradePoint > 0 ? g.gradePoint * g.credits : 0), 0) /
+        Math.max(displayData.reduce((sum, g) => sum + (g.gradePoint != null && g.gradePoint > 0 ? g.credits : 0), 0), 1)).toFixed(2)
     : null;
 
   const semCode = session?.semesterCode ?? null;
@@ -134,11 +131,11 @@ export default function GradesScreen() {
           View Marks Breakdown
         </Button>
       ) : null}
-      {isLoading && !hasCache ? (
+      {isLoading && !hasData ? (
         <View style={styles.center}><ActivityIndicator /></View>
       ) : (
         <FlatList
-          data={data}
+          data={displayData}
           keyExtractor={(i, idx) => `${i.courseCode}-${idx}`}
           renderItem={({ item }) => <GradeCard item={item} />}
           contentContainerStyle={styles.list}

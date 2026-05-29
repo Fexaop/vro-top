@@ -132,9 +132,7 @@ export default function MarksScreen() {
   const lastFetched = useGradesStore((s) => s.lastFetchedCurrent);
   const selectedSemester = useSettingsStore((s) => s.selectedSemester);
 
-  const hasCache = cachedGrades.length > 0;
-
-  const { isLoading, isError, error, refetch, isRefetching } = useQuery({
+  const { data, isLoading, isError, error, refetch, isRefetching } = useQuery({
     queryKey: ['grades', 'current', selectedSemester],
     queryFn: async () => {
       const s = await ensureFreshSession();
@@ -142,12 +140,11 @@ export default function MarksScreen() {
       setCurrentGrades(grades);
       return grades;
     },
-    enabled: !hasCache,
-    staleTime: Infinity,
-    gcTime: Infinity,
+    staleTime: 5 * 60 * 1000,
   });
 
-  const data = cachedGrades;
+  const displayData = data ?? cachedGrades;
+  const hasData = displayData.length > 0;
   const lastUpdatedStr = lastFetched !== null ? new Date(lastFetched).toLocaleTimeString() : null;
 
   return (
@@ -175,13 +172,13 @@ export default function MarksScreen() {
         />
       </View>
 
-      {isLoading && !hasCache ? (
+      {isLoading && !hasData ? (
         <View style={styles.center}>
           <ActivityIndicator />
         </View>
       ) : (
         <FlatList
-          data={data}
+          data={displayData}
           keyExtractor={(item, index) => `${item.courseCode}-${index}`}
           renderItem={({ item }) => <MarksCard item={item} />}
           contentContainerStyle={styles.list}
