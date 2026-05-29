@@ -66,12 +66,12 @@ export async function handleVtopPrelogin(c: Context): Promise<Response> {
       redirect: 'follow',
     });
 
-    // Step 3: GET /vtop/login — must capture cookies from this response (mirrors UniCC captcha.ts)
+    // Step 3: GET /vtop/login — use same original setup cookies (mirrors UniCC captcha.ts exactly)
     const loginPageRes = await fetch(`${VTOP_BASE}/vtop/login`, {
       headers: { Cookie: joinCookies(cookies), 'User-Agent': UA, Accept: 'text/html,application/xhtml+xml' },
       redirect: 'follow',
     });
-    cookies = mergeCookies(cookies, getCookieArray(loginPageRes.headers));
+    // UniCC does NOT update cookies here — keeps original setup cookies throughout prelogin
     const loginHtml = await loginPageRes.text();
 
     // Check for Google reCAPTCHA (cannot auto-solve)
@@ -167,7 +167,7 @@ export async function handleVtopLogin(c: Context): Promise<Response> {
       csrfToken: newCsrf,
       userId: authorizedID,
       semesterCode: semMatch?.[1] ?? currentSemesterCode(),
-      expiresAt: Date.now() + 2 * 60 * 60 * 1000,
+      expiresAt: Date.now() + 30 * 60 * 1000,
     });
   } catch (err) {
     return c.json({ error: String(err) }, 500);
@@ -180,6 +180,7 @@ async function vtopPost(session: Session, path: string, extra: Record<string, st
     method: 'POST',
     headers: {
       'Content-Type': 'application/x-www-form-urlencoded',
+      Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
       Cookie: session.cookies,
       'User-Agent': UA,
       Referer: `${VTOP_BASE}/vtop/open/page`,
@@ -187,7 +188,7 @@ async function vtopPost(session: Session, path: string, extra: Record<string, st
     body: new URLSearchParams({ _csrf: session.csrfToken, authorizedID: session.userId, ...extra }).toString(),
   });
   const html = await res.text();
-  if (!res.ok) throw new Error(`VTOP ${res.status} at ${path}`);
+  if (!res.ok) throw new Error(`VTOP ${res.status} at ${path}: ${html.slice(0, 120)}`);
   return html;
 }
 

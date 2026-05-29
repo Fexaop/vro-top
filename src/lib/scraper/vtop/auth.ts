@@ -7,7 +7,7 @@ export const VTOP_BASE = 'https://vtopcc.vit.ac.in';
 const VTOP_UA =
   'Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Mobile Safari/537.36';
 
-const SESSION_DURATION_MS = 2 * 60 * 60 * 1000; // 2 hours
+const SESSION_DURATION_MS = 30 * 60 * 1000; // 30 min — VTOP server sessions expire sooner than 2h
 const MAX_CAPTCHA_RETRIES = 10;
 
 function mergeCookies(...parts: string[]): string {

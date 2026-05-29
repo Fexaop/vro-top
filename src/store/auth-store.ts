@@ -14,6 +14,7 @@ interface AuthState {
   setVtopCreds: (creds: VtopCredentials) => Promise<void>;
   setVtopSession: (session: VtopSession) => Promise<void>;
   setLmsCreds: (creds: LmsCredentials) => Promise<void>;
+  clearVtopSession: () => void;
   loadFromStorage: () => Promise<void>;
   logout: () => Promise<void>;
 }
@@ -37,6 +38,11 @@ export const useAuthStore = create<AuthState>((set) => ({
   setLmsCreds: async (creds) => {
     await secureStorage.set(LMS_KEY, JSON.stringify(creds));
     set({ lmsCreds: creds });
+  },
+
+  clearVtopSession: () => {
+    void secureStorage.remove(SESSION_KEY);
+    set({ vtopSession: null });
   },
 
   loadFromStorage: async () => {
