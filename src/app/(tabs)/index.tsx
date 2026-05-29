@@ -119,7 +119,6 @@ export default function DashboardScreen() {
             { label: 'Calendar', route: '/(tabs)/calendar', icon: 'calendar' },
             { label: 'Hostel', route: '/(tabs)/hostel', icon: 'home' },
             { label: 'LMS', route: '/(tabs)/lms', icon: 'book-open' },
-            { label: 'Vitol', route: '/(tabs)/vitol', icon: 'video' },
             { label: 'Settings', route: '/(tabs)/settings', icon: 'cog' },
           ].map(({ label, route }) => (
             <Card key={label} mode="outlined" style={styles.gridCard} onPress={() => router.push(route as never)}>
