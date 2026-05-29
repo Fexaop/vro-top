@@ -25,76 +25,71 @@ function extractCsrf(html: string): string {
 type Session = { cookies: string; csrfToken: string; semesterCode: string; userId: string; expiresAt: number };
 
 // ─── PRELOGIN ────────────────────────────────────────────────────────────────
-// Mirrors UniCC's getCaptcha() exactly. Retry loop lives here (max 10 = 40 subrequests, under CF's 50 limit).
+// Single attempt per call — client retries by calling /vtop/prelogin again.
+// Keeping retries here would exhaust CF Workers' 50 subrequest limit.
 export async function handleVtopPrelogin(c: Context): Promise<Response> {
-  const MAX_RETRIES = 10;
+  try {
+    // Step 1: GET /vtop/prelogin/setup → session cookie + CSRF
+    const setupRes = await fetch(`${VTOP_BASE}/vtop/prelogin/setup`, {
+      headers: { 'User-Agent': UA, Accept: 'text/html,application/xhtml+xml' },
+      redirect: 'follow',
+    });
+    const cookies = getCookieArray(setupRes.headers); // keep as array like UniCC
+    const setupHtml = await setupRes.text();
+    const csrf = extractCsrf(setupHtml);
+    if (!csrf) return c.json({ error: 'CSRF not found' }, 422);
 
-  for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
-    try {
-      // Step 1: GET /vtop/prelogin/setup → session cookie + CSRF
-      const setupRes = await fetch(`${VTOP_BASE}/vtop/prelogin/setup`, {
-        headers: { 'User-Agent': UA, Accept: 'text/html,application/xhtml+xml' },
-        redirect: 'follow',
+    // Step 2: POST /vtop/prelogin/setup flag=VTOP — using raw cookie array joined
+    await fetch(`${VTOP_BASE}/vtop/prelogin/setup`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        Cookie: joinCookies(cookies),
+        'User-Agent': UA,
+      },
+      body: new URLSearchParams({ _csrf: csrf, flag: 'VTOP' }).toString(),
+      redirect: 'follow',
+    });
+    // UniCC does NOT use cookies from this response — keeps original cookies array
+
+    // Step 3: GET /vtop/login — same cookies from step 1
+    const loginRes = await fetch(`${VTOP_BASE}/vtop/login`, {
+      headers: { Cookie: joinCookies(cookies), 'User-Agent': UA, Accept: 'text/html,application/xhtml+xml' },
+      redirect: 'follow',
+    });
+    const loginHtml = await loginRes.text();
+
+    // Check captcha type exactly as UniCC: input#gResponse presence
+    const isGRecaptcha = loginHtml.includes('id="gResponse"') || loginHtml.includes("id='gResponse'");
+    if (isGRecaptcha) return c.json({ error: 'GRECAPTCHA' }, 422);
+
+    // Extract captcha image src — mirror UniCC's cheerio #captchaBlock img
+    const imgSrcMatch = loginHtml.match(/id="captchaBlock"[\s\S]*?<img[^>]+src="([^"]+)"/i)
+      ?? loginHtml.match(/<img[^>]+src="([^"]*captcha[^"]*)"[^>]*>/i);
+    const imgSrc = imgSrcMatch?.[1];
+    if (!imgSrc) return c.json({ error: 'Captcha image source not found' }, 422);
+
+    let captchaBase64: string;
+    if (imgSrc.startsWith('data:image')) {
+      captchaBase64 = imgSrc;
+    } else {
+      const captchaUrl = imgSrc.startsWith('http') ? imgSrc : `${VTOP_BASE}${imgSrc}`;
+      const imgRes = await fetch(captchaUrl, {
+        headers: { Cookie: joinCookies(cookies), 'User-Agent': UA },
       });
-      const cookies = getCookieArray(setupRes.headers); // keep as array like UniCC
-      const setupHtml = await setupRes.text();
-      const csrf = extractCsrf(setupHtml);
-      if (!csrf) { await sleep(1000); continue; }
-
-      // Step 2: POST /vtop/prelogin/setup flag=VTOP — using raw cookie array joined
-      await fetch(`${VTOP_BASE}/vtop/prelogin/setup`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
-          Cookie: joinCookies(cookies),
-          'User-Agent': UA,
-        },
-        body: new URLSearchParams({ _csrf: csrf, flag: 'VTOP' }).toString(),
-        redirect: 'follow',
-      });
-      // UniCC does NOT use cookies from this response — keeps original cookies array
-
-      // Step 3: GET /vtop/login — same cookies from step 1
-      const loginRes = await fetch(`${VTOP_BASE}/vtop/login`, {
-        headers: { Cookie: joinCookies(cookies), 'User-Agent': UA, Accept: 'text/html,application/xhtml+xml' },
-        redirect: 'follow',
-      });
-      const loginHtml = await loginRes.text();
-
-      // Check captcha type exactly as UniCC: input#gResponse presence
-      const isGRecaptcha = loginHtml.includes('id="gResponse"') || loginHtml.includes("id='gResponse'");
-      if (isGRecaptcha) { await sleep(1000); continue; }
-
-      // Extract captcha image src — mirror UniCC's cheerio #captchaBlock img
-      const imgSrcMatch = loginHtml.match(/id="captchaBlock"[\s\S]*?<img[^>]+src="([^"]+)"/i)
-        ?? loginHtml.match(/<img[^>]+src="([^"]*captcha[^"]*)"[^>]*>/i);
-      const imgSrc = imgSrcMatch?.[1];
-      if (!imgSrc) throw new Error('Captcha image source not found');
-
-      let captchaBase64: string;
-      if (imgSrc.startsWith('data:image')) {
-        captchaBase64 = imgSrc;
-      } else {
-        const captchaUrl = imgSrc.startsWith('http') ? imgSrc : `${VTOP_BASE}${imgSrc}`;
-        const imgRes = await fetch(captchaUrl, {
-          headers: { Cookie: joinCookies(cookies), 'User-Agent': UA },
-        });
-        const buf = await imgRes.arrayBuffer();
-        const bytes = new Uint8Array(buf);
-        let bin = '';
-        for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]!);
-        captchaBase64 = 'data:image/jpeg;base64,' + btoa(bin);
-      }
-
-      // Return cookies as array (client joins them) + CSRF + captcha image
-      return c.json({ cookies, csrf, captchaBase64 });
-
-    } catch (err) {
-      if (attempt === MAX_RETRIES) return c.json({ error: String(err) }, 503);
-      await sleep(1000);
+      const buf = await imgRes.arrayBuffer();
+      const bytes = new Uint8Array(buf);
+      let bin = '';
+      for (let i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]!);
+      captchaBase64 = 'data:image/jpeg;base64,' + btoa(bin);
     }
+
+    // Return cookies as array (client joins them) + CSRF + captcha image
+    return c.json({ cookies, csrf, captchaBase64 });
+
+  } catch (err) {
+    return c.json({ error: String(err) }, 503);
   }
-  return c.json({ error: 'Failed to get DEFAULT captcha after 10 attempts' }, 503);
 }
 
 // ─── LOGIN ───────────────────────────────────────────────────────────────────
@@ -158,7 +153,7 @@ export async function handleVtopLogin(c: Context): Promise<Response> {
       cookies: allCookies,
       csrfToken: newCsrf,
       userId: authorizedID,
-      semesterCode: semMatch?.[1] ?? '',
+      semesterCode: semMatch?.[1] ?? currentSemesterCode(),
       expiresAt: Date.now() + 2 * 60 * 60 * 1000,
     });
   } catch (err) {
@@ -227,6 +222,13 @@ export async function handleVtopLeave(c: Context): Promise<Response> {
   return c.json({ html: await vtopPost(session, '/vtop/hostels/student/leave/1') });
 }
 
-function sleep(ms: number): Promise<void> {
-  return new Promise((r) => setTimeout(r, ms));
+function currentSemesterCode(): string {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth() + 1; // 1-12
+  // VIT semester codes: CH{year}{year+1 last 2 digits}{01 for Jan-June, 07 for July-Nov}
+  const semYear = month >= 7 ? year : year - 1;
+  const nextYear = ((semYear + 1) % 100).toString().padStart(2, '0');
+  const semType = month >= 7 ? '07' : '01';
+  return `CH${semYear}${nextYear}${semType}`;
 }

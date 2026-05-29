@@ -30,40 +30,56 @@ function gradeToPoints(grade: string): number {
 export function parseCurrentGradesHtml(html: string): CourseGrade[] {
   const root = parseHtml(html);
   const courses: CourseGrade[] = [];
-  let currentCourse: CourseGrade | null = null;
 
-  root.querySelectorAll('table.customTable > tbody > tr').forEach((row) => {
-    const cols = row.querySelectorAll('td');
-    if (cols.length === 0) return;
+  // Select course rows: main table rows with class tableContent and 9+ columns
+  const courseRows = root.querySelectorAll('table.customTable > tbody > tr.tableContent');
 
-    if (row.classList.contains('tableContent') && cols.length >= 9) {
-      if (currentCourse) courses.push(currentCourse);
-      currentCourse = {
-        courseCode: cols[2]?.text.trim() ?? '',
-        courseTitle: cols[3]?.text.trim() ?? '',
-        credits: parseFloat(cols[5]?.text.trim() ?? '0'),
-        grade: '',
-        gradePoint: null,
-        totalMarks: null,
-        components: [],
-      };
-      return;
-    }
+  courseRows.forEach((courseRow) => {
+    const cols = courseRow.querySelectorAll('td');
+    if (cols.length < 9) return;
 
-    if (currentCourse && cols.length >= 5) {
-      const component = cols[2]?.text.trim() ?? '';
-      const max = parseFloat(cols[3]?.text.trim() ?? '0');
-      const scored = cols[4]?.text.trim();
-      if (component && max > 0) {
-        currentCourse.components.push({
-          componentName: component,
+    // Extract credits: try col[4] first, then col[5], default 0
+    const creditRaw4 = cols[4]?.text.trim() ?? '';
+    const creditRaw5 = cols[5]?.text.trim() ?? '';
+    const credits = parseFloat(creditRaw4) || parseFloat(creditRaw5) || 0;
+
+    const course: CourseGrade = {
+      courseCode: cols[2]?.text.trim() ?? '',
+      courseTitle: cols[3]?.text.trim() ?? '',
+      credits,
+      grade: '',
+      gradePoint: null,
+      totalMarks: null,
+      components: [],
+    };
+
+    // The detail row is the immediate next sibling of the course row
+    const detailRow = courseRow.nextElementSibling;
+    if (detailRow) {
+      // Assessment rows are inside a nested table: table.customTable-level1 > tbody > tr.tableContent-level1
+      const assessmentRows = detailRow.querySelectorAll(
+        'table.customTable-level1 > tbody > tr.tableContent-level1',
+      );
+
+      assessmentRows.forEach((aRow) => {
+        const aCols = aRow.querySelectorAll('td');
+        // col[1]: title (output), col[2]: maxMark (output), col[5]: scoredMark (output)
+        const title = aCols[1]?.querySelector('output')?.text.trim() ?? aCols[1]?.text.trim() ?? '';
+        const maxRaw = aCols[2]?.querySelector('output')?.text.trim() ?? aCols[2]?.text.trim() ?? '';
+        const scoredRaw = aCols[5]?.querySelector('output')?.text.trim() ?? aCols[5]?.text.trim() ?? '';
+        const max = parseFloat(maxRaw);
+        if (!title || isNaN(max) || max <= 0) return;
+        course.components.push({
+          componentName: title,
           maxMark: max,
-          markScored: scored && scored !== '-' && scored !== 'AB' ? parseFloat(scored) : null,
+          markScored: scoredRaw && scoredRaw !== '-' && scoredRaw !== 'AB' ? parseFloat(scoredRaw) : null,
         } satisfies GradeComponent);
-      }
+      });
     }
+
+    courses.push(course);
   });
-  if (currentCourse) courses.push(currentCourse);
+
   return courses;
 }
 

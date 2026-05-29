@@ -66,6 +66,17 @@ function extractFormCsrf(html: string): string | null {
   return root.querySelector('input[name="_csrf"]')?.getAttribute('value') ?? null;
 }
 
+function currentSemesterCode(): string {
+  const now = new Date();
+  const year = now.getFullYear();
+  const month = now.getMonth() + 1; // 1-12
+  // VIT semester codes: CH{year}{year+1 last 2 digits}{01 for Jan-June, 07 for July-Nov}
+  const semYear = month >= 7 ? year : year - 1;
+  const nextYear = ((semYear + 1) % 100).toString().padStart(2, '0');
+  const semType = month >= 7 ? '07' : '01';
+  return `CH${semYear}${nextYear}${semType}`;
+}
+
 function extractCaptchaSrc(html: string): string | null {
   const root = parseHtml(html);
   // Google reCAPTCHA check — we can only handle DEFAULT captcha
@@ -163,7 +174,7 @@ export async function vtopLogin(creds: VtopCredentials): Promise<VtopSession> {
 
     // Extract semester code from dashboard (usually in a hidden input or JS variable)
     const semMatch = dashboardHtml.match(/semesterSubId['":\s]+"?([A-Z0-9]+)"?/);
-    const semesterCode = semMatch?.[1] ?? '';
+    const semesterCode = semMatch?.[1] ?? currentSemesterCode();
 
     return {
       cookies: finalCookies,
