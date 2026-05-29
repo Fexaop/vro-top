@@ -250,6 +250,6 @@ function currentSemesterCode(): string {
   const month = now.getMonth() + 1;
   const semYear = month >= 7 ? year : year - 1;
   const nextYear = ((semYear + 1) % 100).toString().padStart(2, '0');
-  const semType = month >= 7 ? '07' : '01';
+  const semType = month >= 7 ? '01' : '07';
   return `CH${semYear}${nextYear}${semType}`;
 }

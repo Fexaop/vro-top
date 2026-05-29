@@ -22,12 +22,12 @@ async function vtopPost(path: string, params: URLSearchParams, session: VtopSess
 
 export function parseAttendanceHtml(html: string): AttendanceCourse[] {
   const root = parseHtml(html);
-  const rows = root.querySelectorAll('#getStudentDetails table tbody tr');
+  const rows = root.querySelectorAll('#getStudentDetails table tr');
   const courses: AttendanceCourse[] = [];
 
   for (const row of rows) {
     const cols = row.querySelectorAll('td');
-    if (cols.length < 12) continue;
+    if (cols.length < 10) continue;
 
     const slotName = cols[4]?.text.trim() ?? '';
     const suffix = slotName.startsWith('L') ? '(L)' : '(T)';
@@ -114,7 +114,7 @@ export function parseTimetableHtml(html: string): TimetableEntry[] {
   const root = parseHtml(html);
   const entries: TimetableEntry[] = [];
 
-  root.querySelectorAll('tbody tr').forEach((row) => {
+  root.querySelectorAll('table tr').forEach((row) => {
     const cells = row.querySelectorAll('td');
     if (cells.length === 0) return;
 

@@ -52,7 +52,7 @@ export function parseLeaveHtml(html: string): LeaveRequest[] {
   const root = parseHtml(html);
   const leaves: LeaveRequest[] = [];
 
-  root.querySelectorAll('table tbody tr').forEach((row, i) => {
+  root.querySelectorAll('table tr').forEach((row, i) => {
     if (i === 0) return;
     const cols = row.querySelectorAll('td');
     if (cols.length < 6) return;

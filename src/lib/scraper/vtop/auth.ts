@@ -73,7 +73,7 @@ function currentSemesterCode(): string {
   // VIT semester codes: CH{year}{year+1 last 2 digits}{01 for Jan-June, 07 for July-Nov}
   const semYear = month >= 7 ? year : year - 1;
   const nextYear = ((semYear + 1) % 100).toString().padStart(2, '0');
-  const semType = month >= 7 ? '07' : '01';
+  const semType = month >= 7 ? '01' : '07';
   return `CH${semYear}${nextYear}${semType}`;
 }
 

@@ -32,7 +32,7 @@ export function parseCurrentGradesHtml(html: string): CourseGrade[] {
   const courses: CourseGrade[] = [];
 
   // Select course rows: main table rows with class tableContent and 9+ columns
-  const courseRows = root.querySelectorAll('table.customTable > tbody > tr.tableContent');
+  const courseRows = root.querySelectorAll('table.customTable tr.tableContent');
 
   courseRows.forEach((courseRow) => {
     const cols = courseRow.querySelectorAll('td');
@@ -56,9 +56,9 @@ export function parseCurrentGradesHtml(html: string): CourseGrade[] {
     // The detail row is the immediate next sibling of the course row
     const detailRow = courseRow.nextElementSibling;
     if (detailRow) {
-      // Assessment rows are inside a nested table: table.customTable-level1 > tbody > tr.tableContent-level1
+      // Assessment rows are inside a nested table: table.customTable-level1 tr.tableContent-level1
       const assessmentRows = detailRow.querySelectorAll(
-        'table.customTable-level1 > tbody > tr.tableContent-level1',
+        'table.customTable-level1 tr.tableContent-level1',
       );
 
       assessmentRows.forEach((aRow) => {
@@ -105,7 +105,7 @@ export function parseGradeViewHtml(html: string, semId: string): SemesterResult 
   let creditsEarned = 0;
   let creditsRegistered = 0;
 
-  root.querySelectorAll('table tbody tr').forEach((row) => {
+  root.querySelectorAll('table tr').forEach((row) => {
     const cols = row.querySelectorAll('td');
     if (cols.length < 6) return;
 
