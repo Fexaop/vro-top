@@ -16,9 +16,19 @@ import { fetchHostelData, fetchLeaveData } from './vtop/profile';
 import { fetchTimetableData } from './vtop/timetable';
 import { lmsLogin as doLmsLogin, fetchLmsAssignmentsData } from './lms/auth';
 
+function rethrowSsl(e: unknown): never {
+  const msg = e instanceof Error ? e.message : String(e);
+  if (/ssl|certificate|handshake|trust anchor/i.test(msg)) {
+    throw new Error(
+      'SSL certificate error connecting to VTOP. Switch to CF Worker mode in Settings → Scraper, or use a development build of the app.',
+    );
+  }
+  throw e;
+}
+
 export class OnDeviceAdapter implements ScraperAdapter {
   vtopLogin(creds: VtopCredentials): Promise<VtopSession> {
-    return vtopLogin(creds);
+    return vtopLogin(creds).catch(rethrowSsl);
   }
   refreshSession(creds: VtopCredentials, old: VtopSession): Promise<VtopSession> {
     return refreshVtopSession(creds, old);
