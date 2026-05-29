@@ -47,29 +47,29 @@ export class CfWorkerAdapter implements ScraperAdapter {
 
   async vtopLogin(creds: VtopCredentials): Promise<VtopSession> {
     for (let attempt = 0; attempt < MAX_CAPTCHA_RETRIES; attempt++) {
-      type PreloginResult = { cookies: string[]; csrf: string; captchaBase64: string } | { error: string };
+      // Prelogin: single attempt per call, worker returns 422 for GRECAPTCHA or failures
+      const preloginRes = await this.postRaw('/vtop/prelogin', {});
+      if (!preloginRes.ok) continue; // GRECAPTCHA or transient failure — retry
 
-      const prelogin = await this.post<PreloginResult>('/vtop/prelogin', {});
-      if ('error' in prelogin) throw new Error(prelogin.error);
-
+      const prelogin = await preloginRes.json() as { cookies: string[]; csrf: string; captchaBase64: string };
       const { solved } = await solveCaptcha(prelogin.captchaBase64);
 
-      const res = await this.postRaw('/vtop/login', {
+      const loginRes = await this.postRaw('/vtop/login', {
         credentials: creds,
         captchaSolution: solved,
         cookies: prelogin.cookies,
         csrf: prelogin.csrf,
       });
 
-      if (res.status === 422) continue;
-      if (!res.ok) {
-        const data = await res.json() as { error?: string };
-        throw new Error(data.error ?? `Worker error ${res.status}`);
+      if (loginRes.status === 422) continue; // wrong captcha — retry
+      if (!loginRes.ok) {
+        const data = await loginRes.json() as { error?: string };
+        throw new Error(data.error ?? `Worker error ${loginRes.status}`);
       }
 
-      return res.json() as Promise<VtopSession>;
+      return loginRes.json() as Promise<VtopSession>;
     }
-    throw new Error(`Login failed after ${MAX_CAPTCHA_RETRIES} attempts.`);
+    throw new Error(`Login failed after ${MAX_CAPTCHA_RETRIES} attempts. VTOP may be using Google reCAPTCHA.`);
   }
 
   refreshSession(creds: VtopCredentials, _old: VtopSession): Promise<VtopSession> {
