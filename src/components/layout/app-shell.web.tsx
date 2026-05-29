@@ -7,12 +7,12 @@ const NAV_ITEMS = [
   { href: '/(tabs)', label: 'Dashboard', icon: 'view-dashboard' },
   { href: '/(tabs)/attendance', label: 'Attendance', icon: 'calendar-check' },
   { href: '/(tabs)/grades', label: 'Grades', icon: 'school' },
-  { href: '/exam', label: 'Exam Schedule', icon: 'clipboard-list' },
-  { href: '/calendar', label: 'Calendar', icon: 'calendar' },
-  { href: '/hostel', label: 'Hostel', icon: 'home-city' },
-  { href: '/lms', label: 'LMS', icon: 'book-open-variant' },
-  { href: '/vitol', label: 'Vitol', icon: 'laptop' },
-  { href: '/settings', label: 'Settings', icon: 'cog' },
+  { href: '/(tabs)/exam', label: 'Exam Schedule', icon: 'clipboard-list' },
+  { href: '/(tabs)/calendar', label: 'Calendar', icon: 'calendar' },
+  { href: '/(tabs)/hostel', label: 'Hostel', icon: 'home-city' },
+  { href: '/(tabs)/lms', label: 'LMS', icon: 'book-open-variant' },
+  { href: '/(tabs)/vitol', label: 'Vitol', icon: 'laptop' },
+  { href: '/(tabs)/settings', label: 'Settings', icon: 'cog' },
 ];
 
 export function AppShell() {

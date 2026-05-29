@@ -95,7 +95,7 @@ export default function DashboardScreen() {
         )}
 
         {nextExam && (
-          <Card mode="outlined" style={styles.card} onPress={() => router.push('/exam')}>
+          <Card mode="outlined" style={styles.card} onPress={() => router.push('/(tabs)/exam')}>
             <Card.Content>
               <Text variant="titleSmall">Next Exam</Text>
               <Divider style={{ marginVertical: 6 }} />
@@ -113,12 +113,12 @@ export default function DashboardScreen() {
         <Text variant="titleMedium" style={{ marginTop: 16, marginBottom: 8 }}>Quick Access</Text>
         <View style={styles.grid}>
           {[
-            { label: 'Exam Schedule', route: '/exam', icon: 'file-document' },
-            { label: 'Calendar', route: '/calendar', icon: 'calendar' },
-            { label: 'Hostel', route: '/hostel', icon: 'home' },
-            { label: 'LMS', route: '/lms', icon: 'book-open' },
-            { label: 'Vitol', route: '/vitol', icon: 'video' },
-            { label: 'Settings', route: '/settings', icon: 'cog' },
+            { label: 'Exam Schedule', route: '/(tabs)/exam', icon: 'file-document' },
+            { label: 'Calendar', route: '/(tabs)/calendar', icon: 'calendar' },
+            { label: 'Hostel', route: '/(tabs)/hostel', icon: 'home' },
+            { label: 'LMS', route: '/(tabs)/lms', icon: 'book-open' },
+            { label: 'Vitol', route: '/(tabs)/vitol', icon: 'video' },
+            { label: 'Settings', route: '/(tabs)/settings', icon: 'cog' },
           ].map(({ label, route }) => (
             <Card key={label} mode="outlined" style={styles.gridCard} onPress={() => router.push(route as never)}>
               <Card.Content style={styles.statContent}>
